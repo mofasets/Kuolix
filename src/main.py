@@ -1,22 +1,23 @@
 import flet as ft
-import google.generativeai as genai
-from PIL import Image
-import io
 import io
 import base64
 from prompt_base import PROMPT
 from sources.colors_pallete import BACKGROUND_COLOR, SECONDARY_COLOR, PRIMARY_COLOR
 from views.explore import get_explore_view
 
+
 def main(page: ft.Page):
+
     #Functions
     def on_navigation_change(e):
         if e.control.selected_index == 0:
-            page.controls = [explore_view]
+            page.controls = [get_explore_view(page)]
         elif e.control.selected_index == 1:
             page.controls.clear()
+            page.floating_action_button = None
         elif e.control.selected_index == 2:
             page.controls.clear()
+            page.floating_action_button = None
 
         page.controls.append(nav_bar)
         page.update()
@@ -43,7 +44,6 @@ def main(page: ft.Page):
     page.window_height = 100
     page.theme_mode = ft.ThemeMode.LIGHT
     page.scroll = ft.ScrollMode.AUTO
-    
 
     #Views
     explore_view = get_explore_view(page)

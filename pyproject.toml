@@ -39,3 +39,9 @@ package-mode = false
 
 [tool.poetry.group.dev.dependencies]
 flet = {extras = ["all"], version = "0.27.6"}
+
+[tool.flet.android.permission]
+"android.permission.CAMERA" = true
+
+[tool.flet.android.feature]
+"android.hardware.camera" = false
