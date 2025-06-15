@@ -1,0 +1,6 @@
+GENDER = [
+    'Masculino',
+    'Femenino',
+    'Otro'
+]
+

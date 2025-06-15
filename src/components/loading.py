@@ -2,7 +2,7 @@ import flet as ft
 from sources.colors_pallete import PRIMARY_COLOR, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR
 
 
-def get_loading_control(page: ft.Page) -> ft.Column:
+def get_loading_control(page: ft.Page, text: str) -> ft.Column:
 
     #Controls
     loading_spinner = ft.Container(
@@ -14,7 +14,7 @@ def get_loading_control(page: ft.Page) -> ft.Column:
     loading_control=ft.Column([
         loading_spinner,
         ft.Container(
-            content=ft.Text("Identificando...", size=DEFAULT_TEXT_SIZE, color=DEFAULT_TEXT_COLOR), 
+            content=ft.Text(text, size=DEFAULT_TEXT_SIZE, color=DEFAULT_TEXT_COLOR), 
             alignment=ft.alignment.center
         ),
     ])

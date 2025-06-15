@@ -1,6 +1,5 @@
 import flet as ft 
 from sources.colors_pallete import PRIMARY_COLOR,SECONDARY_COLOR, DEFAULT_TEXT, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR
-from components.logo import logo
 from components.loading import get_loading_control 
 from components.row_card import row_card
 import base64
@@ -11,6 +10,7 @@ message = """
 """
 
 def get_explore_view(page: ft.Page) -> ft.Column:
+    page.controls.clear()
 
     def fetch_image_recognizer() -> ft.Container: 
         cards = ft.Column()
@@ -46,7 +46,7 @@ def get_explore_view(page: ft.Page) -> ft.Column:
             auxImage.src_base64 = img_base64
             loaded_image.content = ft.Container(content=auxImage, padding=ft.padding.all(10), border_radius=20, bgcolor=PRIMARY_COLOR) 
         
-        loading_control = get_loading_control(page)
+        loading_control = get_loading_control(page, "Identificando ...")
         page.controls.append(loading_control)
         page.update()
 
@@ -86,7 +86,6 @@ def get_explore_view(page: ft.Page) -> ft.Column:
 
     explore_view = ft.Column(
         controls=[
-            logo,
             loaded_image,
         ] 
     )
