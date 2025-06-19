@@ -3,13 +3,20 @@ from sources.colors_pallete import PRIMARY_COLOR, SECONDARY_COLOR, DEFAULT_TEXT,
 from components.loading import get_loading_control
 import time
 from components.row_card import row_card
+from views.show import get_show_view
+from components.logo import logo
+from components.nav_bar import nav_bar
+import asyncio
 
-def get_search_view(page: ft.Page) -> ft.Column:
 
-    def fetch_image_recognizer() -> ft.Container: 
+
+
+def get_search_view(page: ft.Page) -> ft.View:
+
+    async def fetch_image_recognizer() -> ft.Container: 
         cards = ft.Column()
         for record in range(10):
-            cards.controls.append(row_card('img/logo.png', 'Plant #1', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut'))
+            cards.controls.append(row_card(search_view, page, 'img/logo.png', 'Plant #1', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut'*30))
         image_response = ft.Container(
             content=ft.Column([
                 cards
@@ -18,20 +25,20 @@ def get_search_view(page: ft.Page) -> ft.Column:
             )
         )
         print('Get img recognizer...')
-        time.sleep(2)
+        await asyncio.sleep(2)
         print('Successfully...')
         return ft.Container(
             content=image_response,
             alignment=ft.alignment.center,
-            margin=ft.margin.only(top=30, bottom=100),
+            margin=ft.margin.only(top=30, bottom=100, left=10, right=10),
         )
 
-    def search_action(e):
-        nonlocal search_view, search_input, initial_text, icon_button, content, img_response
+    async def search_action(e):
+        nonlocal search_view, search_input, initial_text, icon_button, content, response
         if search_input.value.strip() != "":
 
-            if img_response is not None and img_response in content.controls:
-                content.controls.remove(img_response)
+            if response is not None and response in content.controls:
+                content.controls.remove(response)
 
             if initial_text in content.controls:
                 content.controls.remove(initial_text)
@@ -39,11 +46,11 @@ def get_search_view(page: ft.Page) -> ft.Column:
             content.controls.append(loading_control)
             page.update()
 
-            img_response = fetch_image_recognizer()
-            if img_response:
+            response = await fetch_image_recognizer()
+            if response:
                 if loading_control in content.controls:
                     content.controls.remove(loading_control)
-                content.controls.append(img_response)
+                content.controls.append(response)
                 page.update()
 
     initial_text = ft.Container(
@@ -57,7 +64,7 @@ def get_search_view(page: ft.Page) -> ft.Column:
         alignment=ft.alignment.center,
     )
 
-    img_response = None
+    response = None
     
     search_input = ft.TextField(
         label="Buscar",
@@ -86,12 +93,16 @@ def get_search_view(page: ft.Page) -> ft.Column:
         initial_text
     ])
 
+    nav = nav_bar(page)
 
-    search_view = ft.Container(
-        content=content,
-        expand=True,
-        alignment=ft.alignment.center,
-        padding=ft.padding.only(left=10, right=10),
+    search_view = ft.View(
+        controls=[
+            logo,
+            content,
+            nav
+        ],
+        scroll=ft.ScrollMode.AUTO,
+        padding=ft.padding.only(left=20, right=20),
     )
 
     return search_view

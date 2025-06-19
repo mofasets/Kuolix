@@ -6,38 +6,32 @@ from sources.colors_pallete import BACKGROUND_COLOR, SECONDARY_COLOR, PRIMARY_CO
 from views.explore import get_explore_view
 from views.search import get_search_view
 from views.settings import get_settings_view
+from views.login import get_login_view
+from views.signup import get_signup_view
 import time
-from components.logo import logo
 
 def main(page: ft.Page):
+    def route_change(route):
+        page.views.clear()
 
-    #Functions
+        if page.route == "/explore":
+            page.views.append(get_explore_view(page))
+        elif page.route == "/search":
+            page.views.append(get_search_view(page))
+        elif page.route == "/settings":
+            page.views.append(get_settings_view(page))
+        elif page.route == "/login":
+            page.views.append(get_login_view(page))
+        elif page.route == "/signup":
+            page.views.append(get_signup_view(page))
 
-    def on_navigation_change(e):
-
-        if e.control.selected_index == 0:
-            page.controls = [get_explore_view(page)]
-        elif e.control.selected_index == 1:
-            page.controls = [get_search_view(page)]
-            page.floating_action_button = None
-        elif e.control.selected_index == 2:
-            page.controls = [get_settings_view(page)]
-            page.floating_action_button = None
-        page.controls.insert(0,logo)
-        page.controls.insert(0,nav_bar)
         page.update()
 
-    # Navigation Bar
-    nav_bar = ft.NavigationBar(
-        destinations=[
-            ft.NavigationBarDestination(icon=ft.Icon(name=ft.Icons.LOCATION_ON_SHARP, color=PRIMARY_COLOR), label="Explorar"),
-            ft.NavigationBarDestination(icon=ft.Icon(name=ft.Icons.SEARCH, color=PRIMARY_COLOR), label="Buscar"),
-            ft.NavigationBarDestination(icon=ft.Icon(name=ft.Icons.SETTINGS, color=PRIMARY_COLOR), label="Ajustes"),
-        ],
-        selected_index=0,
-        indicator_color=SECONDARY_COLOR,
-        on_change=on_navigation_change
-    )
+    def view_pop(view):
+        page.views.pop()
+        top_view = page.views[-1]
+        page.go(top_view.route)
+
 
     # Page configuration
     page.bgcolor = BACKGROUND_COLOR
@@ -47,12 +41,9 @@ def main(page: ft.Page):
     page.window_height = 100
     page.theme_mode = ft.ThemeMode.LIGHT
     page.scroll = ft.ScrollMode.AUTO
+    page.on_route_change = route_change
+    page.on_view_pop = view_pop
 
     #Views
-    explore_view = get_explore_view(page)
-    page.add(
-        logo,
-        explore_view,
-        nav_bar
-    )
+    page.go('/login')
 ft.app(main)

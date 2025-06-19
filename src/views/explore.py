@@ -2,20 +2,22 @@ import flet as ft
 from sources.colors_pallete import PRIMARY_COLOR,SECONDARY_COLOR, DEFAULT_TEXT, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR
 from components.loading import get_loading_control 
 from components.row_card import row_card
+from components.nav_bar import nav_bar
+from components.logo import logo
 import base64
 import time
+import asyncio
 
 message = """
     Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 """
 
-def get_explore_view(page: ft.Page) -> ft.Column:
-    page.controls.clear()
-
-    def fetch_image_recognizer() -> ft.Container: 
+def get_explore_view(page: ft.Page) -> ft.View:
+    
+    async def fetch_image_recognizer() -> ft.Container: 
         cards = ft.Column()
         for record in range(3):
-            cards.controls.append(row_card('img/logo.png', 'Plant #1', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut'))
+            cards.controls.append(row_card(explore_view, page, 'img/logo.png', 'Plant #1', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut'))
         image_response = ft.Container(
             content=ft.Column([
                 ft.Text(message),
@@ -23,7 +25,7 @@ def get_explore_view(page: ft.Page) -> ft.Column:
             ])
         )
         print('Get img recognizer...')
-        time.sleep(2)
+        await asyncio.sleep(2)
         print('Successfully...')
         return ft.Container(
             content=image_response,
@@ -31,8 +33,9 @@ def get_explore_view(page: ft.Page) -> ft.Column:
             padding=ft.padding.all(10),
             margin=ft.margin.only(bottom=100),
         )
+    
 
-    def load_image(e: ft.FilePickerResultEvent):
+    async def load_image(e: ft.FilePickerResultEvent):
         img_base64, img_bytes = None, None
         auxImage = ft.Image(width=200, height=200, border_radius=20)
         if not e.files:
@@ -47,20 +50,16 @@ def get_explore_view(page: ft.Page) -> ft.Column:
             loaded_image.content = ft.Container(content=auxImage, padding=ft.padding.all(10), border_radius=20, bgcolor=PRIMARY_COLOR) 
         
         loading_control = get_loading_control(page, "Identificando ...")
-        page.controls.append(loading_control)
+        explore_view.controls.append(loading_control)
         page.update()
 
-        img_response = fetch_image_recognizer()
-        if loading_control in page.controls:
-            page.controls.remove(loading_control)
+        img_response = await fetch_image_recognizer()
+        if loading_control in explore_view.controls:
+            explore_view.controls.remove(loading_control)
 
         if img_response:
-            if explore_view in page.controls:
-                page.controls.remove(explore_view)
             explore_view.controls.append(img_response)
-            page.controls.append(explore_view)
             page.update()
-
 
     loaded_image = ft.Container(
         content=ft.Text(DEFAULT_TEXT, size=DEFAULT_TEXT_SIZE, color=DEFAULT_TEXT_COLOR),
@@ -82,12 +81,16 @@ def get_explore_view(page: ft.Page) -> ft.Column:
     # Page Properties
     page.overlay.append(file_picker)
     page.floating_action_button = image_upload_floating_button
+    nav = nav_bar(page)
 
-
-    explore_view = ft.Column(
+    explore_view = ft.View(
         controls=[
+            logo,
             loaded_image,
-        ] 
+            nav
+        ],
+        floating_action_button=image_upload_floating_button,
+        scroll=ft.ScrollMode.AUTO,
     )
 
     return explore_view

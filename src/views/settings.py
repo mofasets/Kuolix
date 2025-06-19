@@ -7,6 +7,8 @@ from components.input_field import input_field
 from components.selection_field import selection_field
 from components.loading import get_loading_control
 import datetime
+from components.logo import logo
+from components.nav_bar import nav_bar
 
 # ELIMINAR CUANDO SE INTEGRE CON EL BACKEND
 DATA_EXAMPLE = {
@@ -18,9 +20,8 @@ DATA_EXAMPLE = {
     "birthdate": "1990-01-01"
 }
 
-def get_settings_view(page: ft.Page) -> ft.Column:
-    page.controls.clear()
-
+def get_settings_view(page: ft.Page) -> ft.View:
+    
     def store_data(data: dict[str: str]):
         data['name'] = name_input.value
         data['email'] = email_input.value
@@ -30,6 +31,7 @@ def get_settings_view(page: ft.Page) -> ft.Column:
         data['birthdate'] = birthdate_input.value
 
     def update_fields(data: dict[str: str]):
+        nonlocal name_input, email_input, phone_input, country_input, gender_input, birthdate_input
         name_input.value = data.get('name', '')
         email_input.value = data.get('email', '')
         phone_input.value = data.get('phone', '')
@@ -43,9 +45,10 @@ def get_settings_view(page: ft.Page) -> ft.Column:
         return DATA_EXAMPLE
         
     def load_profile_data():
-        page.floating_action_button = False
         loading_control = get_loading_control(page, "Cargando datos del perfil ...")
-        page.controls.append(loading_control)
+        page.views.clear()
+        page.views.append(ft.View(controls=[loading_control]))
+                          
         page.update()
         response = fetch_profile_data()
         
@@ -107,8 +110,6 @@ def get_settings_view(page: ft.Page) -> ft.Column:
         page.update()
 
     # Controls
-    response = load_profile_data()
-
     date_picker = ft.DatePicker(
         first_date=datetime.datetime(2000, 1, 1),
         last_date=datetime.datetime(2030, 12, 31),
@@ -124,6 +125,16 @@ def get_settings_view(page: ft.Page) -> ft.Column:
     file_picker = ft.FilePicker(
         on_result=load_image
     )
+
+    logout_button = ft.IconButton(
+        icon=ft.Icons.LOGOUT,
+        tooltip='Cerrar Sesión',
+        icon_color=PRIMARY_TEXT_COLOR,
+        icon_size=20,
+        bgcolor=PRIMARY_COLOR,
+        on_click=lambda _: page.go('/login')
+    )
+
 
     open_date_picker_button = ft.IconButton(
         icon_size=20,
@@ -177,12 +188,12 @@ def get_settings_view(page: ft.Page) -> ft.Column:
     )
 
 
-    name_input = input_field('Nombre', value=response.get('name', ''))
-    email_input = input_field('Correo Electrónico', value=response.get('email', ''), input_type=ft.KeyboardType.EMAIL)
-    phone_input = input_field('Teléfono', value=response.get('phone', ''), input_type=ft.KeyboardType.PHONE)
-    country_input = input_field('País', value=response.get('country', ''))
-    gender_input = selection_field('Género', GENDER,  value=response.get('gender', ''))
-    birthdate_input = input_field('Fecha de Nacimiento', value=response.get('birthdate', ''))
+    name_input = input_field('Nombre', value='')
+    email_input = input_field('Correo Electrónico', input_type=ft.KeyboardType.EMAIL, value='')
+    phone_input = input_field('Teléfono', input_type=ft.KeyboardType.PHONE, value='')
+    country_input = input_field('País', value='')
+    gender_input = selection_field('Género', GENDER)
+    birthdate_input = input_field('Fecha de Nacimiento', value='')
     birthdate_input.read_only = True 
     birthdate_input.expand = True
 
@@ -227,12 +238,26 @@ def get_settings_view(page: ft.Page) -> ft.Column:
         expand=True,
     )
 
-    settings_view = ft.Column([
-        form
-    ])
+    nav = nav_bar(page)
+
+    response = load_profile_data()
+    if response:
+        update_fields(response)
+
+
+    settings_view = ft.View(
+        controls=[
+            ft.Row([logout_button], alignment=ft.MainAxisAlignment.END),
+            logo,
+            form,
+            nav
+        ],
+        scroll=ft.ScrollMode.AUTO,
+        padding=ft.padding.only(left=20, right=20, top=20)
+    )
 
     page.overlay.append(file_picker)
     page.overlay.append(date_picker)
-
+    
 
     return settings_view
