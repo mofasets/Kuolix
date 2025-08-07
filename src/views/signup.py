@@ -35,7 +35,7 @@ def get_signup_view(page: ft.Page) -> ft.View:
     login_link = ft.GestureDetector(
         content=ft.Text('Iniciar Sesion', color=PRIMARY_COLOR),
         mouse_cursor=ft.MouseCursor.CLICK,
-        on_tap=lambda _: print('Clickeado..'),
+        on_tap=lambda _: page.go('/login'),
     )
     name_input = input_field('Nombre', value='')
     email_input = input_field('Correo Electrónico', '', input_type=ft.KeyboardType.EMAIL)
@@ -97,7 +97,7 @@ def get_signup_view(page: ft.Page) -> ft.View:
             )
 
         ),
-        ft.Row([ft.Text('¿No tienes Cuenta?'),login_link], alignment=ft.MainAxisAlignment.CENTER),
+        ft.Row([ft.Text('¿Ya tienes Cuenta?'),login_link], alignment=ft.MainAxisAlignment.CENTER),
         ft.Container(
             content=ft.ElevatedButton(
                 text='Registrarse',

@@ -14,7 +14,7 @@ message = """
 
 def get_explore_view(page: ft.Page) -> ft.View:
     
-    async def fetch_image_recognizer() -> ft.Container: 
+    def fetch_image_recognizer() -> ft.Container: 
         cards = ft.Column()
         for record in range(3):
             cards.controls.append(row_card(explore_view, page, 'img/logo.png', 'Plant #1', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut'))
@@ -25,7 +25,7 @@ def get_explore_view(page: ft.Page) -> ft.View:
             ])
         )
         print('Get img recognizer...')
-        await asyncio.sleep(2)
+        time.sleep(2)
         print('Successfully...')
         return ft.Container(
             content=image_response,
@@ -34,14 +34,16 @@ def get_explore_view(page: ft.Page) -> ft.View:
             margin=ft.margin.only(bottom=100),
         )
     
-
-    async def load_image(e: ft.FilePickerResultEvent):
+    def load_image(e: ft.FilePickerResultEvent):
         img_base64, img_bytes = None, None
         auxImage = ft.Image(width=200, height=200, border_radius=20)
         if not e.files:
             text = ft.Text(DEFAULT_TEXT, size=DEFAULT_TEXT_SIZE, color=DEFAULT_TEXT_COLOR)
             loaded_image.content = ft.Container(content=text, border=None)
             return "No file selected"
+        print(f"FilePickerResultEvent files: {e.files}")
+        for file_info in e.files:
+            print(f"File info dictionary: {file_info.__dict__}") # Access
         
         with open(e.files[0].path, "rb") as f:
             img_bytes = f.read()
@@ -53,7 +55,7 @@ def get_explore_view(page: ft.Page) -> ft.View:
         explore_view.controls.append(loading_control)
         page.update()
 
-        img_response = await fetch_image_recognizer()
+        img_response = fetch_image_recognizer()
         if loading_control in explore_view.controls:
             explore_view.controls.remove(loading_control)
 
@@ -81,7 +83,7 @@ def get_explore_view(page: ft.Page) -> ft.View:
     # Page Properties
     page.overlay.append(file_picker)
     page.floating_action_button = image_upload_floating_button
-    nav = nav_bar(page)
+    nav = nav_bar(page, 0)
 
     explore_view = ft.View(
         controls=[

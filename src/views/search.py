@@ -93,7 +93,7 @@ def get_search_view(page: ft.Page) -> ft.View:
         initial_text
     ])
 
-    nav = nav_bar(page)
+    nav = nav_bar(page, 1)
 
     search_view = ft.View(
         controls=[

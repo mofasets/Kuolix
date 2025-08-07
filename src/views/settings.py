@@ -238,7 +238,7 @@ def get_settings_view(page: ft.Page) -> ft.View:
         expand=True,
     )
 
-    nav = nav_bar(page)
+    nav = nav_bar(page, 2)
 
     response = load_profile_data()
     if response:
