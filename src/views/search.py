@@ -16,7 +16,7 @@ def get_search_view(page: ft.Page) -> ft.View:
     async def fetch_image_recognizer() -> ft.Container: 
         cards = ft.Column()
         for record in range(10):
-            cards.controls.append(row_card(search_view, page, 'img/logo.png', 'Plant #1', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut'*30))
+            cards.controls.append(row_card(page, 'img/logo.png', 'Plant #1', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut'*30, back_route="/search"))
         image_response = ft.Container(
             content=ft.Column([
                 cards

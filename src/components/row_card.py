@@ -3,12 +3,14 @@ from sources.colors_pallete import BACKGROUND_COLOR
 from views.show import get_show_view
 
 
-def row_card(search_view, page: ft.Page, image_src: str, title: str, description: str) -> ft.Container:
+def row_card(page: ft.Page, image_src: str, title: str, description: str, back_route: str) -> ft.Container:
     def on_click(e):
-        page.controls.clear()
-        page.controls.append(get_show_view(page,search_view, image_src, title, description))
-        page.update()
-
+        # Guardar los datos de esta tarjeta en la sesión de la página
+        page.session.set("show_image_src", image_src)
+        page.session.set("show_title", title)
+        page.session.set("show_description", description)
+        page.session.set("back_route", back_route) # Guardar la ruta para poder volver
+        page.go('/show')
     
     content = ft.Row([
         ft.Image(src=image_src, width=50, height=50),

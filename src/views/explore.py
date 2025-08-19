@@ -17,7 +17,7 @@ def get_explore_view(page: ft.Page) -> ft.View:
     def fetch_image_recognizer() -> ft.Container: 
         cards = ft.Column()
         for record in range(3):
-            cards.controls.append(row_card(explore_view, page, 'img/logo.png', 'Plant #1', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut'))
+            cards.controls.append(row_card(page, 'img/logo.png', 'Plant #1', message, back_route="/explore"))
         image_response = ft.Container(
             content=ft.Column([
                 ft.Text(message),
@@ -96,4 +96,3 @@ def get_explore_view(page: ft.Page) -> ft.View:
     )
 
     return explore_view
-

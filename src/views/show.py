@@ -5,14 +5,17 @@ from components.logo import logo
 import time
 
 
-def get_show_view(page, control_state, img_source, title: str, description: str) -> ft.Container:
+def get_show_view(page: ft.Page) -> ft.View:
+    # Obtener los datos de la sesión que se guardaron antes de navegar aquí
+    img_source = page.session.get("show_image_src")
+    title = page.session.get("show_title")
+    description = page.session.get("show_description")
+    back_route = page.session.get("back_route")
 
     def go_back(e):
-        page.controls.clear()
-        page.controls.append(logo)
-        page.controls.append(control_state)
-        page.update()
-
+        # Navegar de vuelta a la ruta anterior (ej. /explore o /search)
+        page.go(back_route)
+    
     button = ft.IconButton(ft.Icons.ARROW_BACK, on_click=go_back, icon_color=PRIMARY_COLOR, icon_size=30)
 
     content = ft.Column([
@@ -36,8 +39,10 @@ def get_show_view(page, control_state, img_source, title: str, description: str)
         alignment=ft.MainAxisAlignment.CENTER,
     )
 
-    return ft.Container(
-        content=content,
-        alignment=ft.alignment.center,
-        padding=ft.padding.only(left=10, right=10),
+    return ft.View(
+        route="/show",
+        controls=[
+            content
+        ],
+        scroll=ft.ScrollMode.AUTO,
     )
