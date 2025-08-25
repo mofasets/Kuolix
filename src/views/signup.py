@@ -7,136 +7,121 @@ from sources.select_option import GENDER
 import datetime
 
 
-def get_signup_view(page: ft.Page) -> ft.View:
+class SignupView(ft.View):
+    """
+    Clase que encapsula la vista de registro de nuevos usuarios,
+    recopilando sus datos a través de un formulario.
+    """
+    def __init__(self, page: ft.Page):
+        super().__init__()
+        self.page = page
 
-    def handle_date_selection_change(e):
-        if date_picker.value:
-            birthdate_input.value = f"{date_picker.value.strftime('%d/%m/%Y')}"
-        else:
-            birthdate_input.value = "Ninguna"
-        page.update()
+        # --- Propiedades de la vista ---
+        self.route = "/signup"
+        self.scroll = ft.ScrollMode.AUTO
+        self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+        self.padding = ft.padding.all(10)
 
-    def handle_date_picker_dismiss(e):
-        page.update()
+        # --- Controles de la vista ---
+        self.setup_controls()
+        self.setup_layout()
 
-    date_picker = ft.DatePicker(
-        first_date=datetime.datetime(2000, 1, 1),
-        last_date=datetime.datetime(2030, 12, 31),
-        value=datetime.datetime.now(),
-        date_picker_entry_mode=ft.DatePickerEntryMode.CALENDAR,
-        on_change=handle_date_selection_change,
-        on_dismiss=handle_date_picker_dismiss,
-        cancel_text="Cancelar",
-        confirm_text="Aceptar",
-        help_text="Selecciona una fecha"
-    )
-
-
-    login_link = ft.GestureDetector(
-        content=ft.Text('Iniciar Sesion', color=PRIMARY_COLOR),
-        mouse_cursor=ft.MouseCursor.CLICK,
-        on_tap=lambda _: page.go('/login'),
-    )
-    name_input = input_field('Nombre', value='')
-    email_input = input_field('Correo Electrónico', '', input_type=ft.KeyboardType.EMAIL)
-    phone_input = input_field('Teléfono', '',input_type=ft.KeyboardType.PHONE)
-    country_input = input_field('País', '')
-    gender_input = selection_field('Género', GENDER)
-    birthdate_input = input_field('Fecha de Nacimiento','')
-    birthdate_input.read_only = True 
-    birthdate_input.expand = True
-
-    open_date_picker_button = ft.IconButton(
-        icon_size=20,
-        bgcolor=SECONDARY_COLOR,
-        icon_color=PRIMARY_COLOR,
-        icon=ft.Icons.CALENDAR_MONTH,
-        on_click=lambda _: page.open(date_picker), # Usa .pick_date() para mostrarlo
-    )
-
-
-    content = ft.Column([
+    def setup_controls(self):
+        """Inicializa todos los controles interactivos de la vista."""
+        self.date_picker = ft.DatePicker(
+            first_date=datetime.datetime(1920, 1, 1),
+            last_date=datetime.datetime.now(),
+            on_change=self.handle_date_selection_change,
+        )
+        self.page.overlay.append(self.date_picker)
         
-        name_input,
-        email_input,
-        phone_input,
-        country_input,
-        gender_input,
-        ft.Row([
-            birthdate_input, 
-            open_date_picker_button
+        # Campos del formulario
+        self.name_input = input_field('Nombre', '')
+        self.email_input = input_field('Correo Electrónico', '', ft.KeyboardType.EMAIL)
+        self.phone_input = input_field('Teléfono', '', ft.KeyboardType.PHONE)
+        self.country_input = input_field('País', '')
+        self.gender_input = selection_field('Género', GENDER)
+        self.birthdate_input = input_field('Fecha de Nacimiento', '')
+        self.birthdate_input.read_only = True
+        self.birthdate_input.expand = True
+        self.password_input = input_field('Contraseña', '')
+        self.password_input.password = True
+        self.password_input.can_reveal_password = True
+
+    def setup_layout(self):
+        """Define la estructura y el layout de la vista."""
+        login_link = ft.GestureDetector(
+            content=ft.Text('Iniciar Sesión', color=PRIMARY_COLOR),
+            mouse_cursor=ft.MouseCursor.CLICK,
+            on_tap=lambda _: self.page.go('/login'),
+        )
+
+        form_column = ft.Column([
+            self.name_input,
+            self.email_input,
+            self.phone_input,
+            self.country_input,
+            self.gender_input,
+            ft.Row([
+                self.birthdate_input,
+                ft.IconButton(
+                    icon=ft.Icons.CALENDAR_MONTH,
+                    icon_color=PRIMARY_COLOR,
+                    on_click=lambda _: self.page.open(self.date_picker),
+                )
+            ], alignment=ft.MainAxisAlignment.CENTER, spacing=5),
+            self.password_input
+        ], spacing=15)
+
+        content_column = ft.Column([
+            logo,
+            ft.Text('Kuolix | Registrarse', size=16, weight=ft.FontWeight.BOLD, color=PRIMARY_COLOR),
+            form_column,
+            ft.Row([ft.Text('¿Ya tienes Cuenta?'), login_link], alignment=ft.MainAxisAlignment.CENTER),
+            ft.Container(
+                content=ft.ElevatedButton(
+                    text='Registrarse',
+                    bgcolor=PRIMARY_COLOR,
+                    color=PRIMARY_TEXT_COLOR,
+                    on_click=self.signup_user
+                ),
+                margin=ft.margin.only(top=20),
+                border_radius=15,
+            ),
         ],
             alignment=ft.MainAxisAlignment.CENTER,
-            spacing=20,
-        ),
-    ], 
-        expand=True,
-        alignment=ft.MainAxisAlignment.CENTER,
-        spacing=20,
-    )
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=15,
+        )
 
-    content = ft.Column([
-        logo,
-        ft.Text(
-            'Kuolix | Registrarse',
-            size=16,
-            weight=ft.FontWeight.BOLD,
-            color=PRIMARY_COLOR
-        ),
-        content,
-        ft.TextField(
-            label='Contraseña',
-            password=True,
-            can_reveal_password=True,
+        signup_section = ft.Container(
+            content=content_column,
+            padding=ft.padding.all(20),
+            alignment=ft.alignment.center,
             border_radius=15,
-            border_color='#D3D3D3',
-            focused_border_color=PRIMARY_COLOR,
-            border_width=1,
-            label_style=ft.TextStyle(
-                color=PRIMARY_COLOR
-            )
-
-        ),
-        ft.Row([ft.Text('¿Ya tienes Cuenta?'),login_link], alignment=ft.MainAxisAlignment.CENTER),
-        ft.Container(
-            content=ft.ElevatedButton(
-                text='Registrarse',
-                bgcolor=PRIMARY_COLOR,
-                color=PRIMARY_TEXT_COLOR,
-                on_click=lambda _: page.go('/explore')
+            width=400,
+            shadow=ft.BoxShadow(
+                spread_radius=1, blur_radius=1, color=ft.Colors.BLUE_GREY_300,
+                offset=ft.Offset(0, 0), blur_style=ft.ShadowBlurStyle.OUTER,
             ),
-            margin=ft.margin.only(top=30),
-            border_radius=15,
-        ),
-        
-    ],
-        alignment=ft.MainAxisAlignment.CENTER,
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-        spacing=15,
-    )
+            margin=ft.margin.only(top=10, bottom=20),
+        )
 
-    signup_section = ft.Container(
-        content=content,
-        padding=ft.padding.all(20),
-        alignment=ft.alignment.center,
-        border_radius=15,
-        width=400,
-        shadow=ft.BoxShadow(
-            spread_radius=1,
-            blur_radius=1,
-            color=ft.Colors.BLUE_GREY_300,
-            offset=ft.Offset(0, 0),
-            blur_style=ft.ShadowBlurStyle.OUTER,
-        ),
-        margin=ft.margin.only(top=10),
-    )
+        self.controls = [signup_section]
 
-    sign_view = ft.View(
-        controls=[signup_section],
-        padding=ft.padding.all(10),
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-        scroll=ft.ScrollMode.AUTO,
-        route='/signup',
-    )
+    def handle_date_selection_change(self, e):
+        """Actualiza el campo de fecha de nacimiento cuando se selecciona una fecha."""
+        if self.date_picker.value:
+            self.birthdate_input.value = f"{self.date_picker.value.strftime('%d/%m/%Y')}"
+        else:
+            self.birthdate_input.value = ""
+        self.page.update()
 
-    return sign_view
+    def signup_user(self, e):
+        """
+        Lógica para el registro de usuario. Por ahora, solo navega a /explore.
+        Aquí iría la validación y guardado de datos.
+        """
+        # TODO: Añadir lógica de registro y validación de datos aquí
+        print("Registrando nuevo usuario...")
+        self.page.go('/explore')
