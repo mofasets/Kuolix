@@ -1,3 +1,4 @@
+import os
 import flet as ft
 from views.login import LoginView
 from views.signup import SignupView
@@ -6,14 +7,21 @@ from views.search import SearchView
 from views.settings import SettingsView
 from views.show import ShowView
 from state import app_state
+import httpx
+from dotenv import load_dotenv
+from sources.colors_pallete import BACKGROUND_COLOR
 
-BACKGROUND_COLOR = "#F5F5F5"
+load_dotenv()
+API_URL = os.getenv("API_BASE_URL")
 
 def main(page: ft.Page):
     """
     Función principal que inicializa la aplicación, configura la página
     y maneja el enrutamiento entre las diferentes vistas.
     """
+
+    app_state.api_client = httpx.AsyncClient(base_url=API_URL, timeout=10.0)
+
     def route_change(route):
         
         """
@@ -22,7 +30,7 @@ def main(page: ft.Page):
         troute = ft.TemplateRoute(page.route)
 
         if troute.match("/login") or troute.match("/"):
-            page.views.append(LoginView(page))
+            page.views.append(LoginView(page, app_state))
         if troute.match("/explore"):
             page.views.append(ExploreView(page, app_state))
         if troute.match("/search"):
@@ -35,7 +43,7 @@ def main(page: ft.Page):
             page.views.append(ShowView(page, item_id=item_id, app_state=app_state))
 
         if troute.match("/signup"):
-            page.views.append(SignupView(page))
+            page.views.append(SignupView(page, app_state))
 
         page.update()
 
@@ -61,6 +69,11 @@ def main(page: ft.Page):
     page.on_route_change = route_change
     page.on_view_pop = view_pop
 
+    async def cleanup(e):
+        print("Cerrando la aplicación y el cliente de API...")
+        await app_state.api_client.aclose()
+
+    page.on_disconnect = cleanup
     page.go('/login')
 
 if __name__ == "__main__":

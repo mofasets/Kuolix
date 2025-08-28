@@ -8,6 +8,7 @@ from components.logo import logo
 from components.nav_bar import nav_bar
 import asyncio
 from state import AppState
+import httpx
 
 class SearchView(ft.View):
     """
@@ -53,7 +54,7 @@ class SearchView(ft.View):
             results_column = ft.Column(scroll=ft.ScrollMode.AUTO, expand=True)
             for res in self.app_state.search_results:
                 results_column.controls.append(
-                    row_card(self.page, res['id'], res['img'], res['title'], res['desc'], back_route="/search")
+                    row_card(self.page, res, back_route="/search")
                 )
             main_content = ft.Container(content=results_column, expand=True, margin=ft.margin.only(top=30, bottom=100))
         else:
@@ -78,19 +79,32 @@ class SearchView(ft.View):
         """
         Simula una llamada a API asíncrona para obtener resultados de búsqueda.
         """
-        print(f'Buscando resultados para: {query}...')
-        await asyncio.sleep(2)
-        print('Éxito.')
+        print(f'Buscando resultados en la API para: {query}...')
+    
+        token = self.app_state.token
+        if not token:
+            self.page.go("/login")
+            return []
+
+        headers = {"Authorization": f"Bearer {token}"}        
+        try:
         
-        results_data = []
-        for i in range(10):
-            results_data.append({
-                "id": f"planta_{i+1}", 
-                "img": "img/logo.png", 
-                "title": f"Planta #{i+1} (Resultado)", 
-                "desc": "Lorem ipsum dolor sit amet..."
-            })
-        return results_data
+            response = await self.app_state.api_client.get(
+                f"/search/search_query/{query}", 
+                headers=headers
+            )
+        
+            response.raise_for_status()
+
+            results_data = response.json()
+            print(f"Éxito. Se encontraron {len(results_data)} resultados.")
+            return results_data
+
+        except httpx.HTTPStatusError as exc:
+            print(f"Error de API: {exc.response.status_code} - {exc.response.text}")
+        except Exception as e:
+            print(f"Ocurrió un error inesperado durante la búsqueda: {e}")
+        return []
 
     def search_action(self, e):
         """
@@ -115,11 +129,8 @@ class SearchView(ft.View):
         self.content_column.content.controls.append(loading)
         self.page.update()
 
-        await asyncio.sleep(0.01)
-
         results = await self.fetch_search_results_async(self.app_state.search_query)
 
         self.app_state.search_results = results
-        
         self.build_ui()
         self.page.update()

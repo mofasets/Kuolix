@@ -3,39 +3,10 @@ from components.loading import get_loading_control
 from sources.colors_pallete import PRIMARY_COLOR, SECONDARY_COLOR, DEFAULT_TEXT, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR
 from components.logo import logo
 import time
+import httpx
 from state import AppState
-import asyncio
+from components.functions import format_content
 
-async def get_details_by_id(item_id: str):
-    """
-    Simula una llamada a una API para obtener los detalles de un elemento.
-    """
-    print(f"Buscando detalles para el ID: {item_id}...")
-    await asyncio.sleep(1) # Simula la espera de la red
-    
-    # Datos de ejemplo.
-    mock_database = {
-        "planta_1": {
-            "title": "Cactus de Navidad",
-            "image": "img/logo.png", # Asegúrate de tener estas imágenes
-            "description": "El cactus de Navidad es una planta popular de interior que florece en invierno y es conocida por sus flores de colores vivos que aparecen justo a tiempo para las fiestas."
-        },
-        "planta_2": {
-            "title": "Orquídea Phalaenopsis",
-            "image": "img/logo.png",
-            "description": "Conocida como orquídea mariposa, es una de las más fáciles de cuidar en casa, apreciada por sus elegantes flores que pueden durar varios meses."
-        },
-        "planta_3": {
-            "title": "Monstera Deliciosa",
-            "image": "img/logo.png",
-            "description": "También llamada Costilla de Adán, es famosa por sus grandes hojas perforadas. Es una planta tropical resistente y de crecimiento rápido que añade un toque exótico a cualquier espacio."
-        }
-    }
-    return mock_database.get(item_id, {
-        "title": "Elemento no encontrado",
-        "image": "img/logo.png",
-        "description": "No se encontraron detalles para el ID proporcionado."
-    })
 
 class ShowView(ft.View):
     """
@@ -58,14 +29,48 @@ class ShowView(ft.View):
         
         self.page.run_task(self.fetch_and_display_data)
 
+    async def fetch_details_from_api_async(self, item_id: str) -> dict:
+        """
+        Realiza una llamada a la API para obtener los detalles de una planta por su ID.
+        """
+        print(f"Buscando en la API los detalles para el ID: {item_id}...")
+        
+        token = self.app_state.token
+        if not token:
+            self.page.go("/login")
+            return {}
+
+        headers = {"Authorization": f"Bearer {token}"}
+
+        try:
+            response = await self.app_state.api_client.get(
+                f"/show/{item_id}", 
+                headers=headers
+            )
+            response.raise_for_status()
+            
+            print("Detalles recibidos con éxito.")
+            return response.json()
+
+        except httpx.HTTPStatusError as exc:
+            print(f"Error de API: {exc.response.status_code} - {exc.response.text}")
+        except Exception as e:
+            print(f"Ocurrió un error inesperado: {e}")
+        
+        # En caso de error, devuelve un objeto por defecto para no romper la UI.
+        return {
+            "scientific_name": response.get('scientific_name', 'Sin Información'),
+            "common_names": response.get('common_names',[]),
+            "habitat_description": response.get('habitat_description','Sin Información'),
+            "specific_deseases": response.get('specific_deseases',[]),
+            "image": "img/logo.png",
+        }
+
     async def fetch_and_display_data(self):
         """
         Busca los datos del elemento y construye la UI final.
         """
-        # # El "truco" para que la UI se actualice y muestre la carga.
-        # await asyncio.sleep(0.01)
-
-        data = await get_details_by_id(self.item_id)
+        data = await self.fetch_details_from_api_async(self.item_id)
         
         self.build_ui(data)
         self.page.update()
@@ -99,34 +104,18 @@ class ShowView(ft.View):
             padding=ft.padding.all(10),
         )
 
-        title_text = ft.Container(
-            content=ft.Text(
-                data.get("title", "Sin Título"),
-                text_align=ft.TextAlign.CENTER, 
-                size=30, 
-                weight=ft.FontWeight.BOLD, 
-                color=PRIMARY_COLOR
-            ), 
-            alignment=ft.alignment.center,
-        )
-
-        description_text = ft.Container(
-            content=ft.Text(data.get("description", "No disponible."), text_align=ft.TextAlign.JUSTIFY), 
-            alignment=ft.alignment.center,
-            padding=ft.padding.symmetric(horizontal=15)
-        )   
+        control_content = format_content(data)
 
         content_column = ft.Column([
             back_button,
             image_display,
-            title_text,
-            description_text,
+            control_content
         ], spacing=20, horizontal_alignment=ft.CrossAxisAlignment.START)
         
         self.controls.clear()
         self.controls.append(content_column)
 
-    def go_back(self, e):
+    async def go_back(self, e):
         """
         Navega a la vista anterior en la pila de vistas.
         """

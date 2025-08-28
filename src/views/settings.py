@@ -39,9 +39,9 @@ class SettingsView(ft.View):
         # --- Controles de la vista ---
         self.setup_controls()
 
-        if self.app_state.user_profile:
+        if self.app_state.current_user:
             print("Perfil de usuario encontrado en app_state. Construyendo UI al instante.")
-            self.build_ui(self.app_state.user_profile)
+            self.build_ui(self.app_state.current_user)
         else:
             print("Perfil no encontrado. Mostrando carga y buscando datos.")
             self.controls.append(get_loading_control(self.page, "Cargando perfil..."))
@@ -78,22 +78,25 @@ class SettingsView(ft.View):
         form_content = ft.Column([
             profile_photo,
             ft.Row([
-                ft.IconButton(icon=ft.Icons.EDIT, on_click=lambda _: self.file_picker.pick_files(file_type=ft.FilePickerFileType.IMAGE)),
-                ft.IconButton(icon=ft.Icons.DELETE, on_click=self.delete_image)
+                ft.IconButton(icon=ft.Icons.EDIT, on_click=lambda _: self.file_picker.pick_files(file_type=ft.FilePickerFileType.IMAGE), icon_color=PRIMARY_COLOR),
+                ft.IconButton(icon=ft.Icons.DELETE, on_click=self.delete_image, icon_color=PRIMARY_COLOR)
             ], alignment=ft.MainAxisAlignment.CENTER, spacing=20),
             self.name_input, self.email_input, self.phone_input, self.country_input, self.gender_input,
             ft.Row([
                 self.birthdate_input,
-                ft.IconButton(icon=ft.Icons.CALENDAR_MONTH, on_click=lambda _: self.page.open(self.date_picker))
-            ], alignment=ft.MainAxisAlignment.CENTER, spacing=20),
+                ft.IconButton(icon=ft.Icons.CALENDAR_MONTH, on_click=lambda _: self.page.open(self.date_picker), bgcolor=SECONDARY_COLOR, icon_color=PRIMARY_COLOR)
+            ], alignment=ft.MainAxisAlignment.CENTER),
             ft.Row([
-                ft.FilledButton(text='Actualizar', on_click=self.update_profile),
-                ft.FilledButton(text='Cancelar', on_click=self.discard_changes)
+                ft.FilledButton(text='Actualizar', on_click=self.update_profile, bgcolor=PRIMARY_COLOR),
+                ft.FilledButton(text='Cancelar', on_click=self.discard_changes, bgcolor=PRIMARY_COLOR)
             ], alignment=ft.MainAxisAlignment.CENTER, spacing=20)
         ], scroll=ft.ScrollMode.AUTO, expand=True) # Hacemos que esta columna ocupe el espacio y tenga scroll
 
         content = ft.Column([
-            ft.Row([ft.IconButton(icon=ft.Icons.LOGOUT, on_click=lambda _: self.page.go('/login'))], alignment=ft.MainAxisAlignment.END),
+            ft.Row([
+                ft.IconButton(icon=ft.Icons.LOGOUT, on_click=lambda _: self.logout, icon_color=PRIMARY_COLOR)], 
+                alignment=ft.MainAxisAlignment.END,
+            ),
             logo,
             form_content, 
         ])
@@ -104,7 +107,6 @@ class SettingsView(ft.View):
             nav_bar(self.page, 2),
         ])
 
-
     def update_fields(self, data: dict):
         """Rellena los campos del formulario con los datos proporcionados."""
         self.name_input.value = data.get('name', '')
@@ -114,41 +116,71 @@ class SettingsView(ft.View):
         self.gender_input.value = data.get('gender', '')
         self.birthdate_input.value = data.get('birthdate', '')
 
-    async def fetch_profile_data_async(self):
-        """Simula la obtención de datos del perfil."""
+    async def fetch_profile_data_async(self) -> dict | None:
+        """Obtiene los datos del perfil del usuario logueado desde la API."""
         print("Obteniendo datos del perfil desde la API...")
-        await asyncio.sleep(2)
-        print("Datos obtenidos.")
-        return DATA_EXAMPLE
+        
+        token = self.app_state.token
+        user_id = self.app_state.current_user.get('id') if self.app_state.current_user else None
+        
+        if not token or not user_id:
+            await self.page.go_async("/login")
+            return None
+
+        headers = {"Authorization": f"Bearer {token}"}
+        try:
+            response = await self.app_state.api_client.get(f"/settings/{user_id}", headers=headers)
+            response.raise_for_status()
+            print("Datos obtenidos.")
+            return response.json()
+        except Exception as e:
+            print(f"Error al obtener perfil: {e}")
+            return None
 
     async def load_profile_data(self):
         """Carga los datos, los guarda en el estado y construye la UI."""
         data = await self.fetch_profile_data_async()
-        self.app_state.user_profile = data
-        try:
+        if data:
+            self.app_state.current_user = data
             self.build_ui(data)
-            self.page.controls.clear()
-            self.page.update()
-        except Exception as e:
-            print(f"Error al construir la UI: {e}")
+            await self.page.update_async()
 
+    async def update_profile(self, e):
+        """Guarda los cambios del formulario enviándolos a la API."""
 
-
-    def update_profile(self, e):
-        """Guarda los cambios del formulario en el estado central (app_state)."""
+        self.update_button.disabled = True
+        await self.page.update_async()
+        
         updated_data = {
             "name": self.name_input.value,
             "email": self.email_input.value,
             "phone": self.phone_input.value,
             "country": self.country_input.value,
             "gender": self.gender_input.value,
-            "birthdate": self.birthdate_input.value,
-            # Mantenemos la foto si ya existía
-            "photo_b64": self.app_state.user_profile.get('photo_b64')
+            "birth_date": self.birthdate_input.value
         }
-        self.app_state.user_profile = updated_data
-        self.page.snack_bar = ft.SnackBar(content=ft.Text("Perfil actualizado con éxito"), bgcolor=ft.colors.GREEN)
+        
+        token = self.app_state.token
+        user_id = self.app_state.current_user.get('id') if self.app_state.current_user else None
+
+        if not token or not user_id:
+            self.page.go("/login")
+            return
+
+        headers = {"Authorization": f"Bearer {token}"}
+        try:
+            # Llama al endpoint PUT, enviando los datos como JSON
+            response = await self.app_state.api_client.put(f"/settings/{user_id}", json=updated_data, headers=headers)
+            response.raise_for_status()
+            
+            self.app_state.current_user = response.json() 
+            
+            self.page.snack_bar = ft.SnackBar(content=ft.Text("Perfil actualizado con éxito"), bgcolor=ft.colors.GREEN)
+        except Exception as ex:
+            self.page.snack_bar = ft.SnackBar(content=ft.Text(f"Error al actualizar: {ex}"), bgcolor=ft.colors.RED)
+        
         self.page.snack_bar.open = True
+        self.update_button.disabled = False
         self.page.update()
 
     def discard_changes(self, e):
@@ -183,3 +215,12 @@ class SettingsView(ft.View):
         else:
             self.birthdate_input.value = ""
         self.page.update()
+
+    async def logout(self, e):
+        """Limpia el estado de la sesión y redirige al login."""
+        self.app_state.token = None
+        self.app_state.current_user = None
+        # Limpia otras partes del estado si es necesario
+        self.app_state.search_results = []
+        print("Sesión cerrada.")
+        await self.page.go_async("/login")

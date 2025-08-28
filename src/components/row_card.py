@@ -1,23 +1,24 @@
 import flet as ft
-from sources.colors_pallete import BACKGROUND_COLOR
+from sources.colors_pallete import BACKGROUND_COLOR, PRIMARY_COLOR
 from views.show import ShowView
+from components.functions import format_content
 
-
-def row_card(page: ft.Page, id: str, image_src: str, title: str, description: str, back_route: str) -> ft.Container:
+def row_card(page: ft.Page, content: dict[str, str], back_route: str) -> ft.Container:
     def on_click(e):
         # Guardar los datos de esta tarjeta en la sesión de la página
-        page.session.set("id", id)
-        page.session.set("show_image_src", image_src)
-        page.session.set("show_title", title)
-        page.session.set("show_description", description)
-        page.session.set("back_route", back_route) # Guardar la ruta para poder volver
-        page.go(f'/show/{id}')
+        page.session.set("id", content.get("id"))
+        page.session.set("scientific_name", content.get("scientific_name"))
+        page.session.set("common_names", content.get("common_names"))
+        page.session.set("habitat_description", content.get("habitat_description"))
+        page.session.set("specific_deseases", content.get("specific_deseases"))
+        page.session.set("back_route", back_route)
+        page.go(f'/show/{content.get('id')}')
     
-    content = ft.Row([
-        ft.Image(src=image_src, width=50, height=50),
+    control_content = ft.Row([
+        ft.Image(src='img/logo.png', width=50, height=50),
         ft.Column([
-            ft.Text(title),
-            ft.Text(f'{description[:20]}...')
+            ft.Text(content.get('scientific_name'), color=PRIMARY_COLOR, size=20, weight=ft.FontWeight.BOLD),
+            ft.Text(f'{content.get('habitat_description')[:20]}...')
         ], 
             expand=True,
         )],
@@ -25,7 +26,7 @@ def row_card(page: ft.Page, id: str, image_src: str, title: str, description: st
     )
 
     row_card = ft.Container(
-        content=content,
+        content=control_content,
         padding=ft.padding.all(20),
         border_radius=15,
         margin=ft.margin.only(bottom=10),

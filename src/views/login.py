@@ -1,21 +1,24 @@
 import flet as ft
 from components.logo import logo
 from sources.colors_pallete import PRIMARY_COLOR, SECONDARY_COLOR,BACKGROUND_COLOR, PRIMARY_TEXT_COLOR
+from state import AppState
+import httpx
 
 class LoginView(ft.View):
     """
     Clase que encapsula la vista de inicio de sesión, manejando la entrada
     del usuario y la navegación a otras vistas como registro o la principal.
     """
-    def __init__(self, page: ft.Page):
+    def __init__(self, page: ft.Page, app_state: AppState):
         super().__init__()
         self.page = page
-
-        # --- Propiedades de la vista ---
+        self.app_state = app_state
         self.route = "/login"
         self.scroll = ft.ScrollMode.AUTO
         self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
         self.padding = ft.padding.all(10)
+        self.error_text = ft.Text(value="", color=ft.Colors.RED, visible=False)
+        self.error_text.visible = False
 
         # --- Controles de la vista ---
         
@@ -47,13 +50,14 @@ class LoginView(ft.View):
             on_tap=self.go_to_signup,
         )
 
+        self.login_button_control = ft.ElevatedButton(
+            text='Iniciar Sesión',
+            bgcolor=PRIMARY_COLOR,
+            color=PRIMARY_TEXT_COLOR,
+            on_click=self.login
+        )
         login_button = ft.Container(
-            content=ft.ElevatedButton(
-                text='Iniciar Sesión',
-                bgcolor=PRIMARY_COLOR,
-                color=PRIMARY_TEXT_COLOR,
-                on_click=self.login
-            ),
+            content=self.login_button_control,
             margin=ft.margin.only(top=30),
             border_radius=15,
         )
@@ -72,6 +76,7 @@ class LoginView(ft.View):
             self.password_input,
             ft.Row([ft.Text('¿No tienes Cuenta?'), signup_link], alignment=ft.MainAxisAlignment.CENTER),
             login_button,
+            self.error_text
         ],
             alignment=ft.MainAxisAlignment.CENTER,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -92,19 +97,61 @@ class LoginView(ft.View):
                 blur_style=ft.ShadowBlurStyle.OUTER,
             ),
             margin=ft.margin.only(top=50),
+            
         )
 
         self.controls = [login_section]
 
-    def login(self, e):
+    async def login(self, e):
         """
         Lógica para el inicio de sesión. Por ahora, solo navega a /explore.
         Aquí iría la validación de email/contraseña.
         """
-        # TODO: Añadir lógica de autenticación aquí
-        print(f"Email: {self.email_input.value}, Contraseña: {self.password_input.value}")
-        self.page.go('/explore')
+        self.error_text.visible = False
+        self.login_button_control.disabled = True
+        self.page.update()
 
+        try:
+            email = self.email_input.value
+            password = self.password_input.value
+
+            if not email or not password:
+                raise ValueError("El correo y la contraseña no pueden estar vacíos.")
+            
+            login_data = {"username": email, "password": password}
+            
+            print("Intentando iniciar sesión...")
+            response = await self.app_state.api_client.post("/auth/token", data=login_data)
+            response.raise_for_status() 
+            
+            data = response.json()
+            access_token = data.get("access_token")
+
+            if not access_token:
+                raise ValueError("La respuesta de la API no contiene un token de acceso.")
+            self.app_state.token = access_token
+
+            headers = {"Authorization": f"Bearer {access_token}"}
+            self.page.go('/explore')
+
+        except httpx.HTTPStatusError as exc:
+            print(f"Error de API: {exc}")
+            self.error_text.value = "Correo o contraseña incorrectos."
+            self.error_text.visible = True
+        except (httpx.ConnectError, httpx.TimeoutException):
+            # Error de red
+            print("Error de conexión con el servidor.")
+            self.error_text.value = "No se pudo conectar al servidor. Inténtalo más tarde."
+            self.error_text.visible = True
+        except Exception as exc:
+            print(f"Ocurrió un error inesperado: {exc}")
+            self.error_text.value = str(exc)
+            self.error_text.visible = True
+        
+        finally:
+            self.login_button_control.disabled = False
+            self.page.update()
+        
     def go_to_signup(self, e):
         """Navega a la página de registro."""
         self.page.go('/signup')

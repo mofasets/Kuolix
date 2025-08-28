@@ -5,18 +5,18 @@ from components.input_field import input_field
 from components.selection_field import selection_field
 from sources.select_option import GENDER
 import datetime
-
+from state import AppState
+import httpx
 
 class SignupView(ft.View):
     """
     Clase que encapsula la vista de registro de nuevos usuarios,
     recopilando sus datos a través de un formulario.
     """
-    def __init__(self, page: ft.Page):
+    def __init__(self, page: ft.Page, app_state: AppState):
         super().__init__()
         self.page = page
-
-        # --- Propiedades de la vista ---
+        self.app_state = app_state
         self.route = "/signup"
         self.scroll = ft.ScrollMode.AUTO
         self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
@@ -56,6 +56,20 @@ class SignupView(ft.View):
             on_tap=lambda _: self.page.go('/login'),
         )
 
+        self.signup_button_control = ft.ElevatedButton(
+            text='Registrarse',
+            bgcolor=PRIMARY_COLOR,
+            color=PRIMARY_TEXT_COLOR,
+            on_click=self.signup_user
+        )
+        signup_button = ft.Container(
+            content=self.signup_button_control,
+            margin=ft.margin.only(top=20),
+            border_radius=15,
+        )
+        
+        # Control para mostrar mensajes de error/éxito
+        self.info_text = ft.Text(value="", visible=False)
         form_column = ft.Column([
             self.name_input,
             self.email_input,
@@ -70,7 +84,8 @@ class SignupView(ft.View):
                     on_click=lambda _: self.page.open(self.date_picker),
                 )
             ], alignment=ft.MainAxisAlignment.CENTER, spacing=5),
-            self.password_input
+            self.password_input,
+            self.info_text
         ], spacing=15)
 
         content_column = ft.Column([
@@ -109,7 +124,7 @@ class SignupView(ft.View):
 
         self.controls = [signup_section]
 
-    def handle_date_selection_change(self, e):
+    async def handle_date_selection_change(self, e):
         """Actualiza el campo de fecha de nacimiento cuando se selecciona una fecha."""
         if self.date_picker.value:
             self.birthdate_input.value = f"{self.date_picker.value.strftime('%d/%m/%Y')}"
@@ -117,11 +132,55 @@ class SignupView(ft.View):
             self.birthdate_input.value = ""
         self.page.update()
 
-    def signup_user(self, e):
+    async def signup_user(self, e):
         """
         Lógica para el registro de usuario. Por ahora, solo navega a /explore.
         Aquí iría la validación y guardado de datos.
         """
-        # TODO: Añadir lógica de registro y validación de datos aquí
-        print("Registrando nuevo usuario...")
+        self.info_text.visible = False
+        self.signup_button_control.disabled = True
+        self.page.update()
+
+        try:
+            user_data = {
+                "name": self.name_input.value,
+                "email": self.email_input.value,
+                "phone": self.phone_input.value,
+                "country": self.country_input.value,
+                "gender": self.gender_input.value,
+                "birth_date": self.birthdate_input.value,
+                "password": self.password_input.value
+            }
+
+            if not all(user_data.values()):
+                raise ValueError("Todos los campos son obligatorios.")
+
+            print("Enviando datos de registro a la API...")
+            response = await self.app_state.api_client.post(
+                "/auth/register",
+                json=user_data
+            )
+            response.raise_for_status()
+
+            print("¡Usuario registrado exitosamente!")
+            self.info_text.value = "¡Registro exitoso! Ahora puedes iniciar sesión."
+            self.info_text.color = ft.Colors.GREEN
+            self.info_text.visible = True
+
+        except httpx.HTTPStatusError as exc:
+            error_data = exc.response.json()
+            error_detail = error_data.get("detail", "Error desconocido.")
+            print(f"Error de API: {error_detail}")
+            self.info_text.value = f"Error: {error_data}"
+            self.info_text.color = ft.Colors.RED
+            self.info_text.visible = True
+        except Exception as exc:
+            print(f"Error inesperado: {exc}")
+            self.info_text.value = f"Error: {exc}"
+            self.info_text.color = ft.Colors.RED
+            self.info_text.visible = True
+        
+        finally:
+            self.signup_button_control.disabled = False
+            self.page.update()
         self.page.go('/explore')

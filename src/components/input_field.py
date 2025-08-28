@@ -12,6 +12,7 @@ def input_field(label: str, value: str, input_type: str = None) -> ft.TextField:
         focused_border_color=PRIMARY_COLOR,
         value=value,
         keyboard_type=ft.KeyboardType.TEXT if input_type is None else input_type,
+        expand=True
     )
 
     return text_field
