@@ -99,7 +99,6 @@ class LoginView(ft.View):
             margin=ft.margin.only(top=50),
             
         )
-
         self.controls = [login_section]
 
     async def login(self, e):
@@ -131,7 +130,14 @@ class LoginView(ft.View):
                 raise ValueError("La respuesta de la API no contiene un token de acceso.")
             self.app_state.token = access_token
 
+            # Second call to API  process
             headers = {"Authorization": f"Bearer {access_token}"}
+            user_profile_response = await self.app_state.api_client.get("/auth/me", headers=headers)
+            user_profile_response.raise_for_status()
+            
+            user_data = user_profile_response.json()
+            
+            self.app_state.current_user = user_data
             self.page.go('/explore')
 
         except httpx.HTTPStatusError as exc:
@@ -139,7 +145,6 @@ class LoginView(ft.View):
             self.error_text.value = "Correo o contraseña incorrectos."
             self.error_text.visible = True
         except (httpx.ConnectError, httpx.TimeoutException):
-            # Error de red
             print("Error de conexión con el servidor.")
             self.error_text.value = "No se pudo conectar al servidor. Inténtalo más tarde."
             self.error_text.visible = True

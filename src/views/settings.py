@@ -32,10 +32,8 @@ class SettingsView(ft.View):
         super().__init__()
         self.page = page
         self.app_state = app_state
-        # Propiedades de la vista
         self.scroll = ft.ScrollMode.AUTO
         self.padding = ft.padding.only(left=20, right=20, top=20)
-
         # --- Controles de la vista ---
         self.setup_controls()
 
@@ -49,6 +47,7 @@ class SettingsView(ft.View):
 
     def setup_controls(self):
         """Inicializa los controles interactivos vacíos."""
+        self.update_button = ft.FilledButton(text='Actualizar', on_click=self.update_profile, bgcolor=PRIMARY_COLOR)
         self.file_picker = ft.FilePicker(on_result=self.load_image)
         self.date_picker = ft.DatePicker(
             first_date=datetime.datetime(1920, 1, 1),
@@ -75,6 +74,7 @@ class SettingsView(ft.View):
 
         profile_photo = ft.Container(content=profile_image_content, alignment=ft.alignment.center)
         
+
         form_content = ft.Column([
             profile_photo,
             ft.Row([
@@ -87,7 +87,7 @@ class SettingsView(ft.View):
                 ft.IconButton(icon=ft.Icons.CALENDAR_MONTH, on_click=lambda _: self.page.open(self.date_picker), bgcolor=SECONDARY_COLOR, icon_color=PRIMARY_COLOR)
             ], alignment=ft.MainAxisAlignment.CENTER),
             ft.Row([
-                ft.FilledButton(text='Actualizar', on_click=self.update_profile, bgcolor=PRIMARY_COLOR),
+                self.update_button,
                 ft.FilledButton(text='Cancelar', on_click=self.discard_changes, bgcolor=PRIMARY_COLOR)
             ], alignment=ft.MainAxisAlignment.CENTER, spacing=20)
         ], scroll=ft.ScrollMode.AUTO, expand=True) # Hacemos que esta columna ocupe el espacio y tenga scroll
@@ -143,13 +143,13 @@ class SettingsView(ft.View):
         if data:
             self.app_state.current_user = data
             self.build_ui(data)
-            await self.page.update_async()
+            self.page.update()
 
     async def update_profile(self, e):
         """Guarda los cambios del formulario enviándolos a la API."""
 
         self.update_button.disabled = True
-        await self.page.update_async()
+        self.page.update()
         
         updated_data = {
             "name": self.name_input.value,
@@ -175,9 +175,8 @@ class SettingsView(ft.View):
             
             self.app_state.current_user = response.json() 
             
-            self.page.snack_bar = ft.SnackBar(content=ft.Text("Perfil actualizado con éxito"), bgcolor=ft.colors.GREEN)
         except Exception as ex:
-            self.page.snack_bar = ft.SnackBar(content=ft.Text(f"Error al actualizar: {ex}"), bgcolor=ft.colors.RED)
+            self.page.snack_bar = ft.SnackBar(content=ft.Text(f"Error al actualizar: {ex}"), bgcolor=ft.Colors.RED)
         
         self.page.snack_bar.open = True
         self.update_button.disabled = False
@@ -185,10 +184,8 @@ class SettingsView(ft.View):
 
     def discard_changes(self, e):
         """Descarta los cambios y recarga los datos originales desde el estado."""
-        if self.app_state.user_profile:
-            self.build_ui(self.app_state.user_profile)
-            self.page.snack_bar = ft.SnackBar(content=ft.Text("Cambios descartados"))
-            self.page.snack_bar.open = True
+        if self.app_state.current_user:
+            self.build_ui(self.app_state.current_user)
             self.page.update()
 
     def load_image(self, e: ft.FilePickerResultEvent):
@@ -203,9 +200,9 @@ class SettingsView(ft.View):
 
     def delete_image(self, e: ft.ControlEvent):
         """Restaura la imagen por defecto eliminándola del estado."""
-        if self.app_state.user_profile and 'photo_b64' in self.app_state.user_profile:
-            del self.app_state.user_profile['photo_b64']
-            self.build_ui(self.app_state.user_profile)
+        if self.app_state.current_user and 'photo_b64' in self.app_state.current_user:
+            del self.app_state.current_user['photo_b64']
+            self.build_ui(self.app_state.current_user)
             self.page.update()
 
     def handle_date_selection_change(self, e):
