@@ -6,6 +6,11 @@ import time
 import httpx
 from state import AppState
 from components.functions import format_content
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+API_URL = os.getenv("API_BASE_URL")
 
 
 class ShowView(ft.View):
@@ -33,7 +38,6 @@ class ShowView(ft.View):
         """
         Realiza una llamada a la API para obtener los detalles de una planta por su ID.
         """
-        print(f"Buscando en la API los detalles para el ID: {item_id}...")
         
         token = self.app_state.token
         if not token:
@@ -63,7 +67,7 @@ class ShowView(ft.View):
             "common_names": response.get('common_names',[]),
             "habitat_description": response.get('habitat_description','Sin Información'),
             "specific_deseases": response.get('specific_deseases',[]),
-            "image": "img/logo.png",
+            "image": f"{API_URL}/static/images/plants/{response.get('image_filename','no-image.jpg')}",
         }
 
     async def fetch_and_display_data(self):
@@ -89,7 +93,7 @@ class ShowView(ft.View):
         image_display = ft.Container(
             content=ft.Container(
                 content=ft.Image(
-                    src=data.get("image", "img/logo.png"), 
+                    src=f"{API_URL}/static/images/plants/{data.get('image_filename','img/logo.png')}", 
                     
                     fit=ft.ImageFit.COVER, 
                     width=250, 
@@ -113,7 +117,7 @@ class ShowView(ft.View):
         ], spacing=20, horizontal_alignment=ft.CrossAxisAlignment.START)
         
         self.controls.clear()
-        self.controls.append(content_column)
+        self.controls.append(ft.Container(content=content_column, padding=ft.padding.only(top=20)))
 
     async def go_back(self, e):
         """

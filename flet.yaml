@@ -1,0 +1,5 @@
+name: Kuolix
+version: 1.0.0
+description: Una app para identificar plantas medicinales.
+apk:
+    icon: assets/icon.png

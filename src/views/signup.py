@@ -7,6 +7,7 @@ from sources.select_option import GENDER
 import datetime
 from state import AppState
 import httpx
+import asyncio
 
 class SignupView(ft.View):
     """
@@ -137,6 +138,10 @@ class SignupView(ft.View):
         Lógica para el registro de usuario. Por ahora, solo navega a /explore.
         Aquí iría la validación y guardado de datos.
         """
+    async def signup_user(self, e):
+        """
+        Lógica para el registro de usuario con manejo de errores y navegación correcta.
+        """
         self.info_text.visible = False
         self.signup_button_control.disabled = True
         self.page.update()
@@ -152,8 +157,8 @@ class SignupView(ft.View):
                 "password": self.password_input.value
             }
 
-            if not all(user_data.values()):
-                raise ValueError("Todos los campos son obligatorios.")
+            if not all([user_data["name"], user_data["email"], user_data["password"]]):
+                raise ValueError("Nombre, email y contraseña son obligatorios.")
 
             print("Enviando datos de registro a la API...")
             response = await self.app_state.api_client.post(
@@ -163,24 +168,43 @@ class SignupView(ft.View):
             response.raise_for_status()
 
             print("¡Usuario registrado exitosamente!")
-            self.info_text.value = "¡Registro exitoso! Ahora puedes iniciar sesión."
+            self.info_text.value = "¡Registro exitoso! Redirigiendo al login..."
             self.info_text.color = ft.Colors.GREEN
             self.info_text.visible = True
+            self.page.update()
+
+            asyncio.sleep(2)
+
+            self.page.go('/login')
 
         except httpx.HTTPStatusError as exc:
-            error_data = exc.response.json()
-            error_detail = error_data.get("detail", "Error desconocido.")
-            print(f"Error de API: {error_detail}")
-            self.info_text.value = f"Error: {error_data}"
+            try:
+                error_data = exc.response.json()
+                detail = error_data.get("detail", [])
+                if isinstance(detail, list) and len(detail) > 0:
+                    first_error = detail[0]
+                    error_message = f"Error en el campo '{first_error['loc'][1]}': {first_error['msg']}"
+                else:
+                    error_message = str(detail)
+            except Exception:
+                error_message = "Error del servidor. Inténtalo de nuevo."
+
+            print(f"Error de API: {error_message}")
+            self.info_text.value = error_message
             self.info_text.color = ft.Colors.RED
             self.info_text.visible = True
+
+        except ValueError as exc:
+            self.info_text.value = str(exc)
+            self.info_text.color = ft.Colors.RED
+            self.info_text.visible = True
+        
         except Exception as exc:
             print(f"Error inesperado: {exc}")
-            self.info_text.value = f"Error: {exc}"
+            self.info_text.value = "Ocurrió un error inesperado. Revisa tu conexión."
             self.info_text.color = ft.Colors.RED
             self.info_text.visible = True
         
         finally:
             self.signup_button_control.disabled = False
             self.page.update()
-        self.page.go('/explore')

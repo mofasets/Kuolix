@@ -5,13 +5,12 @@ from components.row_card import row_card
 from components.nav_bar import nav_bar
 from components.logo import logo
 from components.functions import format_content
-
 import base64
-import time
-import asyncio
 from state import AppState
 import os
 import mimetypes
+from httpx import HTTPStatusError 
+
 
 
 message = """
@@ -142,16 +141,22 @@ class ExploreView(ft.View):
                 data = response.json()
                 print("Respuesta recibida de la API.")
 
-                # Mapeamos la respuesta al formato que la UI espera
                 item_info = data.get("img_result", {})
                 results_data = data.get("suggested_plants", [])
                 
                 return item_info, results_data
 
+        except HTTPStatusError as http_err:
+            error_data = http_err.response.json()
+            detail_message = error_data.get("detail", "Error de comunicación con el servidor.")
+            print(f"Error HTTP {http_err.response.status_code}: {detail_message}")
+            return detail_message, []
+        
         except Exception as e:
-            print(f"Ocurrió un error al llamar a la API: {e}")
-            return f"Error: {e}", []
-
+            error_message = "Ocurrió un error inesperado. Revisa tu conexión."
+            print(f"Ocurrió un error genérico: {e}")
+            return error_message, []
+        
     async def recognize_image_async(self, e: ft.FilePickerResultEvent):
         """
         Orquesta el proceso de reconocimiento: muestra la carga,
@@ -174,8 +179,12 @@ class ExploreView(ft.View):
         self.page.update()
 
         results = await self.fetch_image_recognizer_async(selected_file_path)
-        self.app_state.explore_img_description, self.app_state.explore_items = results
-        
+        if isinstance(results[0], str):
+            error_message = results[0]
+            self.page.open(ft.SnackBar(content=ft.Text(error_message, color="white"), bgcolor=ft.Colors.RED_400))
+        else:
+            self.app_state.explore_img_description, self.app_state.explore_items = results       
+     
         self.build_ui()
         self.page.update()
 

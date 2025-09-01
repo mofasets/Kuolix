@@ -48,13 +48,11 @@ class SettingsView(ft.View):
     def setup_controls(self):
         """Inicializa los controles interactivos vacíos."""
         self.update_button = ft.FilledButton(text='Actualizar', on_click=self.update_profile, bgcolor=PRIMARY_COLOR)
-        self.file_picker = ft.FilePicker(on_result=self.load_image)
         self.date_picker = ft.DatePicker(
             first_date=datetime.datetime(1920, 1, 1),
             last_date=datetime.datetime.now(),
             on_change=self.handle_date_selection_change,
         )
-        self.page.overlay.extend([self.file_picker, self.date_picker])
         self.name_input = input_field('Nombre', '')
         self.email_input = input_field('Correo Electrónico', '', ft.KeyboardType.EMAIL)
         self.phone_input = input_field('Teléfono', '', ft.KeyboardType.PHONE)
@@ -66,21 +64,7 @@ class SettingsView(ft.View):
         """Construye la interfaz de usuario completa con los datos del perfil."""
         self.update_fields(data)
 
-        photo_b64 = data.get('photo_b64')
-        if photo_b64:
-            profile_image_content = ft.Image(src_base64=photo_b64, fit=ft.ImageFit.COVER, width=200, height=200, border_radius=100)
-        else:
-            profile_image_content = ft.Image(src='img/blank_user.png', fit=ft.ImageFit.COVER, width=200, height=200, border_radius=100)
-
-        profile_photo = ft.Container(content=profile_image_content, alignment=ft.alignment.center)
-        
-
         form_content = ft.Column([
-            profile_photo,
-            ft.Row([
-                ft.IconButton(icon=ft.Icons.EDIT, on_click=lambda _: self.file_picker.pick_files(file_type=ft.FilePickerFileType.IMAGE), icon_color=PRIMARY_COLOR),
-                ft.IconButton(icon=ft.Icons.DELETE, on_click=self.delete_image, icon_color=PRIMARY_COLOR)
-            ], alignment=ft.MainAxisAlignment.CENTER, spacing=20),
             self.name_input, self.email_input, self.phone_input, self.country_input, self.gender_input,
             ft.Row([
                 self.birthdate_input,
@@ -94,7 +78,7 @@ class SettingsView(ft.View):
 
         content = ft.Column([
             ft.Row([
-                ft.IconButton(icon=ft.Icons.LOGOUT, on_click=lambda _: self.logout, icon_color=PRIMARY_COLOR)], 
+                ft.IconButton(icon=ft.Icons.LOGOUT, on_click=self.logout, icon_color=PRIMARY_COLOR)], 
                 alignment=ft.MainAxisAlignment.END,
             ),
             logo,
@@ -103,7 +87,7 @@ class SettingsView(ft.View):
 
         self.controls.clear()
         self.controls.extend([
-            ft.Container(content=content),
+            ft.Container(content=content, padding=ft.padding.only(top=20)),
             nav_bar(self.page, 2),
         ])
 
@@ -188,23 +172,6 @@ class SettingsView(ft.View):
             self.build_ui(self.app_state.current_user)
             self.page.update()
 
-    def load_image(self, e: ft.FilePickerResultEvent):
-        """Actualiza la foto en el estado central y reconstruye la UI."""
-        if not e.files: return
-        with open(e.files[0].path, "rb") as f:
-            img_base64 = base64.b64encode(f.read()).decode("utf-8")
-        if self.app_state.user_profile is None: self.app_state.user_profile = {}
-        self.app_state.user_profile['photo_b64'] = img_base64
-        self.build_ui(self.app_state.user_profile)
-        self.page.update()
-
-    def delete_image(self, e: ft.ControlEvent):
-        """Restaura la imagen por defecto eliminándola del estado."""
-        if self.app_state.current_user and 'photo_b64' in self.app_state.current_user:
-            del self.app_state.current_user['photo_b64']
-            self.build_ui(self.app_state.current_user)
-            self.page.update()
-
     def handle_date_selection_change(self, e):
         """Actualiza el campo de fecha de nacimiento cuando se selecciona una fecha."""
         if self.date_picker.value:
@@ -213,11 +180,10 @@ class SettingsView(ft.View):
             self.birthdate_input.value = ""
         self.page.update()
 
-    async def logout(self, e):
+    def logout(self, e):
         """Limpia el estado de la sesión y redirige al login."""
         self.app_state.token = None
         self.app_state.current_user = None
-        # Limpia otras partes del estado si es necesario
         self.app_state.search_results = []
         print("Sesión cerrada.")
-        await self.page.go_async("/login")
+        self.page.go("/login")

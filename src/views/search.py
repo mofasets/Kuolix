@@ -9,6 +9,7 @@ from components.nav_bar import nav_bar
 import asyncio
 from state import AppState
 import httpx
+from typing import List
 
 class SearchView(ft.View):
     """
@@ -25,55 +26,52 @@ class SearchView(ft.View):
         self.response_container = None
         self.app_state = app_state
         self.route = "/search"
-
-        self.build_ui()
+        self.page.controls = [ft.Container(content=get_loading_control(self.page, "Cargando..."), expand=True)]
+        if not self.app_state.search_results:
+            self.page.run_task(self.load_initial_recommendations)
+        else:
+            self.build_ui()
 
     def build_ui(self):
         """
         Construye la interfaz de usuario completa basándose en el estado actual.
         """
         self.search_input = ft.TextField(
-            label="Buscar",
-            value=self.app_state.search_query, 
-            border_radius=15,
-            border_color=PRIMARY_COLOR,
-            border_width=2,
-            expand=True,
-            on_submit=self.search_action
+            label="Buscar", value=self.app_state.search_query, 
+            border_radius=15, border_color=PRIMARY_COLOR,
+            border_width=2, expand=True, on_submit=self.search_action
         )
-
         self.icon_button = ft.IconButton(
-            icon=ft.Icons.SEARCH, 
-            icon_size=30, 
-            bgcolor=SECONDARY_COLOR, 
-            icon_color=PRIMARY_COLOR,
-            on_click=self.search_action
+            icon=ft.Icons.SEARCH, icon_size=30, bgcolor=SECONDARY_COLOR, 
+            icon_color=PRIMARY_COLOR, on_click=self.search_action
         )
         
-        if self.app_state.search_results:
-            results_column = ft.Column(scroll=ft.ScrollMode.AUTO, expand=True)
+        self.results_container = ft.Column(scroll=ft.ScrollMode.AUTO, expand=True)
+        if self.app_state.search_query:
             for res in self.app_state.search_results:
-                results_column.controls.append(
+                self.results_container.controls.append(
                     row_card(self.page, res, back_route="/search")
                 )
-            main_content = ft.Container(content=results_column, expand=True, margin=ft.margin.only(top=30, bottom=100))
         else:
-            main_content = ft.Container(
-                content=ft.Text(DEFAULT_TEXT_SEARCH, size=DEFAULT_TEXT_SIZE, color=DEFAULT_TEXT_COLOR, text_align=ft.TextAlign.CENTER),
-                margin=ft.margin.only(top=50),
-                alignment=ft.alignment.center
+            self.results_container.controls.append(
+                ft.Container(
+                    content=ft.Text(DEFAULT_TEXT_SEARCH, size=DEFAULT_TEXT_SIZE, color=DEFAULT_TEXT_COLOR, text_align=ft.TextAlign.CENTER),
+                    margin=ft.margin.only(top=50), alignment=ft.alignment.center
+                )
             )
 
-        self.content_column = ft.Container(
-            content=ft.Column([
+        self.controls.clear()
+        self.controls = [
+            ft.Container(content=ft.Column([
+                logo,
                 ft.Row([self.search_input, self.icon_button], alignment=ft.MainAxisAlignment.SPACE_BETWEEN, spacing=10),
-                main_content
+                ft.Container(content=self.results_container, expand=True, margin=ft.margin.only(top=30, bottom=100)),
             ]),
-            expand=True,
-            padding=ft.padding.only(left=20, right=20)
-        )
+                padding=ft.padding.only(left=10, right=10)
+            ),
+            nav_bar(self.page, 1)
+        ]
 
-        self.controls = [logo, self.content_column, nav_bar(self.page, 1)]
 
     async def fetch_search_results_async(self, query: str) -> list[dict]:
         """
@@ -106,6 +104,17 @@ class SearchView(ft.View):
             print(f"Ocurrió un error inesperado durante la búsqueda: {e}")
         return []
 
+    async def load_initial_recommendations(self):
+            """
+            Tarea asíncrona que llama a la API para obtener recomendaciones,
+            las guarda en el estado y luego construye la UI.
+            """
+            recommendations = await self.fetch_recommendations()
+            self.app_state.search_results = recommendations
+            
+            self.build_ui()
+            self.page.update()
+
     def search_action(self, e):
         """
         Activador síncrono: guarda el término de búsqueda y lanza la tarea asíncrona.
@@ -124,13 +133,52 @@ class SearchView(ft.View):
         """
         Trabajador asíncrono: muestra la carga, busca, guarda resultados y reconstruye la UI.
         """
-        loading = get_loading_control(self.page, "Buscando...")
-        self.content_column.content.controls.pop()
-        self.content_column.content.controls.append(loading)
+        self.results_container.controls.clear()
+        self.results_container.controls.append(get_loading_control(self.page, "Buscando..."))
         self.page.update()
 
         results = await self.fetch_search_results_async(self.app_state.search_query)
-
         self.app_state.search_results = results
-        self.build_ui()
+        
+        self.results_container.controls.clear()
+        if self.app_state.search_results:
+            for res in self.app_state.search_results:
+                self.results_container.controls.append(
+                    row_card(self.page, res, back_route="/search")
+                )
+        else:
+             self.results_container.controls.append(
+                ft.Container(
+                    content=ft.Text("No se encontraron resultados.", size=DEFAULT_TEXT_SIZE, color=DEFAULT_TEXT_COLOR, text_align=ft.TextAlign.CENTER),
+                    margin=ft.margin.only(top=50), alignment=ft.alignment.center
+                )
+            )
         self.page.update()
+
+    async def fetch_recommendations(self) -> List[dict]:
+        """"""
+        user_id = self.app_state.current_user.get('id') if self.app_state.current_user else None
+        token = self.app_state.token
+        if not token:
+            self.page.go("/login")
+            return []
+
+        headers = {"Authorization": f"Bearer {token}"}        
+        try:
+        
+            response = await self.app_state.api_client.get(
+                f"/search/index/{user_id}", 
+                headers=headers
+            )
+        
+            response.raise_for_status()
+
+            results_data = response.json()
+            print(f"Éxito. Se encontraron {len(results_data)} resultados.")
+            return results_data
+
+        except httpx.HTTPStatusError as exc:
+            print(f"Error de API: {exc.response.status_code} - {exc.response.text}")
+        except Exception as e:
+            print(f"Ocurrió un error inesperado durante la búsqueda: {e}")
+        return []
