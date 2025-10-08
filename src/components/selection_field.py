@@ -1,5 +1,5 @@
 import flet as ft 
-from sources.colors_pallete import PRIMARY_COLOR, SECONDARY_COLOR, DEFAULT_TEXT, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR
+from sources.colors_pallete import PRIMARY_COLOR, SECONDARY_COLOR, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR
 
 
 def selection_field(label: str, options: list, value: str = None) -> ft.Dropdown:

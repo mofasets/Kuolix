@@ -1,7 +1,7 @@
 import flet as ft
 import time
 import base64
-from sources.colors_pallete import PRIMARY_COLOR, SECONDARY_COLOR, DEFAULT_TEXT, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR, PRIMARY_TEXT_COLOR, SECONDARY_TEXT_COLOR
+from sources.colors_pallete import PRIMARY_COLOR, SECONDARY_COLOR, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR, PRIMARY_TEXT_COLOR, SECONDARY_TEXT_COLOR
 from sources.select_option import GENDER
 from components.input_field import input_field
 from components.selection_field import selection_field
@@ -12,16 +12,6 @@ from components.nav_bar import nav_bar
 import asyncio
 from state import AppState
 
-
-# ELIMINAR CUANDO SE INTEGRE CON EL BACKEND
-DATA_EXAMPLE = {
-    "name": "Sebastian Osto",
-    "email": "sebastianosto1@gmail.com",
-    "phone": "04241234567",
-    "country": "Venezuela",
-    "gender": "Masculino",
-    "birthdate": "1990-01-01"
-}
 
 class SettingsView(ft.View):
     """
@@ -72,7 +62,7 @@ class SettingsView(ft.View):
             ], alignment=ft.MainAxisAlignment.CENTER),
             ft.Row([
                 self.update_button,
-                ft.FilledButton(text='Cancelar', on_click=self.discard_changes, bgcolor=PRIMARY_COLOR)
+                ft.FilledButton(text='Cancelar', on_click=self.discard_changes, bgcolor=SECONDARY_COLOR, color=PRIMARY_COLOR)
             ], alignment=ft.MainAxisAlignment.CENTER, spacing=20)
         ], scroll=ft.ScrollMode.AUTO, expand=True) # Hacemos que esta columna ocupe el espacio y tenga scroll
 
@@ -98,7 +88,7 @@ class SettingsView(ft.View):
         self.phone_input.value = data.get('phone', '')
         self.country_input.value = data.get('country', '')
         self.gender_input.value = data.get('gender', '')
-        self.birthdate_input.value = data.get('birthdate', '')
+        self.birthdate_input.value = data.get('birth_date', '')
 
     async def fetch_profile_data_async(self) -> dict | None:
         """Obtiene los datos del perfil del usuario logueado desde la API."""
@@ -108,7 +98,7 @@ class SettingsView(ft.View):
         user_id = self.app_state.current_user.get('id') if self.app_state.current_user else None
         
         if not token or not user_id:
-            await self.page.go_async("/login")
+            self.page.go("/login")
             return None
 
         headers = {"Authorization": f"Bearer {token}"}
@@ -160,9 +150,9 @@ class SettingsView(ft.View):
             self.app_state.current_user = response.json() 
             
         except Exception as ex:
-            self.page.snack_bar = ft.SnackBar(content=ft.Text(f"Error al actualizar: {ex}"), bgcolor=ft.Colors.RED)
-        
-        self.page.snack_bar.open = True
+            self.page.open(ft.SnackBar(content=ft.Text('Error al Actualizar Datos', color="white"), bgcolor=ft.Colors.RED_400, duration=1000))    
+
+        self.page.open(ft.SnackBar(content=ft.Text('Perfil actualizado con éxito.', color="white"), bgcolor=ft.Colors.GREEN_400, duration=1000))
         self.update_button.disabled = False
         self.page.update()
 
@@ -184,6 +174,11 @@ class SettingsView(ft.View):
         """Limpia el estado de la sesión y redirige al login."""
         self.app_state.token = None
         self.app_state.current_user = None
+        self.app_state.user_profile = None
+        self.app_state.explore_items = []
+        self.app_state.explore_last_image_b64 = None
+        self.app_state.explore_img_description = {}
+        self.app_state.search_query = ""
         self.app_state.search_results = []
         print("Sesión cerrada.")
         self.page.go("/login")

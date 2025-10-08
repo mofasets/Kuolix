@@ -135,11 +135,6 @@ class SignupView(ft.View):
 
     async def signup_user(self, e):
         """
-        Lógica para el registro de usuario. Por ahora, solo navega a /explore.
-        Aquí iría la validación y guardado de datos.
-        """
-    async def signup_user(self, e):
-        """
         Lógica para el registro de usuario con manejo de errores y navegación correcta.
         """
         self.info_text.visible = False

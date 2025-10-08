@@ -1,5 +1,5 @@
 import flet as ft
-from sources.colors_pallete import PRIMARY_COLOR, SECONDARY_COLOR, DEFAULT_TEXT, DEFAULT_TEXT_SEARCH, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR
+from sources.colors_pallete import PRIMARY_COLOR, SECONDARY_COLOR, DEFAULT_TEXT_SEARCH, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR
 from components.loading import get_loading_control
 import time
 from components.row_card import row_card
@@ -47,7 +47,7 @@ class SearchView(ft.View):
         )
         
         self.results_container = ft.Column(scroll=ft.ScrollMode.AUTO, expand=True)
-        if self.app_state.search_query:
+        if self.app_state.search_results:
             for res in self.app_state.search_results:
                 self.results_container.controls.append(
                     row_card(self.page, res, back_route="/search")
@@ -71,7 +71,6 @@ class SearchView(ft.View):
             ),
             nav_bar(self.page, 1)
         ]
-
 
     async def fetch_search_results_async(self, query: str) -> list[dict]:
         """

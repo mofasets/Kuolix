@@ -1,5 +1,5 @@
 import flet as ft
-from sources.colors_pallete import PRIMARY_COLOR, SECONDARY_COLOR, DEFAULT_TEXT, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR
+from sources.colors_pallete import PRIMARY_COLOR, SECONDARY_COLOR, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR
 
 def input_field(label: str, value: str, input_type: str = None) -> ft.TextField:
     text_field = ft.TextField(

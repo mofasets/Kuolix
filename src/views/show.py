@@ -1,6 +1,6 @@
 import flet as ft
 from components.loading import get_loading_control
-from sources.colors_pallete import PRIMARY_COLOR, SECONDARY_COLOR, DEFAULT_TEXT, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR
+from sources.colors_pallete import PRIMARY_COLOR
 from components.logo import logo
 import time
 import httpx

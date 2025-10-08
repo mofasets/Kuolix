@@ -1,21 +1,16 @@
 import flet as ft 
-from sources.colors_pallete import PRIMARY_COLOR,SECONDARY_COLOR, DEFAULT_TEXT, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR
+from sources.colors_pallete import PRIMARY_COLOR,SECONDARY_COLOR, DEFAULT_INFO_TEXT, INFO_TITLE_COLOR, INFO_BG_COLOR, WARNING_TITLE_COLOR, WARNING_BG_COLOR, DEFAULT_WARNING_TEXT
 from components.loading import get_loading_control 
 from components.row_card import row_card
 from components.nav_bar import nav_bar
 from components.logo import logo
 from components.functions import format_content
+from components.note_card import note_card
 import base64
 from state import AppState
 import os
 import mimetypes
 from httpx import HTTPStatusError 
-
-
-
-message = """
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-"""
 
 class ExploreView(ft.View):
     """
@@ -32,7 +27,22 @@ class ExploreView(ft.View):
 
         # Controls
         self.loaded_image = ft.Container(
-            content=ft.Text(DEFAULT_TEXT, size=DEFAULT_TEXT_SIZE, color=DEFAULT_TEXT_COLOR),
+            content=ft.Column([
+                note_card(
+                    'Información',
+                    DEFAULT_INFO_TEXT, 
+                    INFO_TITLE_COLOR, 
+                    INFO_BG_COLOR, 
+                    ft.Icons.INFO_OUTLINE
+                ),
+                note_card(
+                    'Precaución',
+                    DEFAULT_WARNING_TEXT, 
+                    WARNING_TITLE_COLOR, 
+                    WARNING_BG_COLOR, 
+                    ft.Icons.WARNING_AMBER
+                ),                
+            ]),
             margin=ft.margin.only(top=20, bottom=20),
             border_radius=20,
             alignment=ft.alignment.center,
@@ -64,7 +74,23 @@ class ExploreView(ft.View):
                 width=200, height=200, border_radius=20, fit=ft.ImageFit.COVER
             )
         else:
-            image_content = ft.Text(DEFAULT_TEXT, size=DEFAULT_TEXT_SIZE, color=DEFAULT_TEXT_COLOR)
+            image_content = ft.Column([
+                note_card(
+                    'Información',
+                    DEFAULT_INFO_TEXT, 
+                    INFO_TITLE_COLOR, 
+                    INFO_BG_COLOR, 
+                    ft.Icons.INFO_OUTLINE
+                ),
+                note_card(
+                    'Precaución',
+                    DEFAULT_WARNING_TEXT, 
+                    WARNING_TITLE_COLOR, 
+                    WARNING_BG_COLOR, 
+                    ft.Icons.WARNING_AMBER
+                ),                
+            ])
+
 
         # Image Control
         self.loaded_image = ft.Container(
@@ -134,8 +160,10 @@ class ExploreView(ft.View):
                 response = await self.app_state.api_client.post(
                     "/explore/recognize_img",
                     files=files_to_upload,
-                    headers=headers
+                    headers=headers,
+                    timeout=120.0
                 )
+                print('Respuesta: ', response)
                 response.raise_for_status()
                 
                 data = response.json()
@@ -152,10 +180,10 @@ class ExploreView(ft.View):
             print(f"Error HTTP {http_err.response.status_code}: {detail_message}")
             return detail_message, []
         
-        except Exception as e:
-            error_message = "Ocurrió un error inesperado. Revisa tu conexión."
-            print(f"Ocurrió un error genérico: {e}")
-            return error_message, []
+        # except Exception as e:
+        #     error_message = "Ocurrió un error inesperado. Revisa tu conexión."
+        #     print(f"Ocurrió un error genérico: {e}")
+        #     return error_message, []
         
     async def recognize_image_async(self, e: ft.FilePickerResultEvent):
         """

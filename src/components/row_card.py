@@ -1,5 +1,5 @@
 import flet as ft
-from sources.colors_pallete import BACKGROUND_COLOR, PRIMARY_COLOR
+from sources.colors_pallete import BACKGROUND_COLOR, PRIMARY_COLOR, SECONDARY_COLOR
 from views.show import ShowView
 from state import app_state
 import os
@@ -42,7 +42,7 @@ def row_card(page: ft.Page, content: dict[str, str], back_route: str) -> ft.Cont
         plant_image, # Reemplazamos el ft.Image anterior por nuestra nueva variable
         ft.Column([
             ft.Text(content.get('scientific_name'), color=PRIMARY_COLOR, size=20, weight=ft.FontWeight.BOLD),
-            ft.Text(f'{content.get("habitat_description", "")[:20]}...')
+            ft.Text(f'{content.get("habitat_description", "")[:30]}...')
         ], 
             expand=True,
         )],
@@ -59,7 +59,7 @@ def row_card(page: ft.Page, content: dict[str, str], back_route: str) -> ft.Cont
         shadow=ft.BoxShadow(
             spread_radius=1,
             blur_radius=1,
-            color=ft.Colors.BLUE_GREY_300,
+            color=SECONDARY_COLOR,
             offset=ft.Offset(0, 0),
             blur_style=ft.ShadowBlurStyle.OUTER,
         ),
