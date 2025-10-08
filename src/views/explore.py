@@ -1,5 +1,5 @@
 import flet as ft 
-from sources.colors_pallete import PRIMARY_COLOR,SECONDARY_COLOR, DEFAULT_INFO_TEXT, INFO_TITLE_COLOR, INFO_BG_COLOR, WARNING_TITLE_COLOR, WARNING_BG_COLOR, DEFAULT_WARNING_TEXT
+from sources.colors_pallete import PRIMARY_COLOR,SECONDARY_COLOR, DEFAULT_INFO_TEXT, INFO_TITLE_COLOR, INFO_BG_COLOR, WARNING_TITLE_COLOR, WARNING_BG_COLOR, DEFAULT_WARNING_TEXT, DEFAULT_RESPONSABILITY
 from components.loading import get_loading_control 
 from components.row_card import row_card
 from components.nav_bar import nav_bar
@@ -180,10 +180,10 @@ class ExploreView(ft.View):
             print(f"Error HTTP {http_err.response.status_code}: {detail_message}")
             return detail_message, []
         
-        # except Exception as e:
-        #     error_message = "Ocurrió un error inesperado. Revisa tu conexión."
-        #     print(f"Ocurrió un error genérico: {e}")
-        #     return error_message, []
+        except Exception as e:
+            error_message = "Ocurrió un error inesperado. Revisa tu conexión."
+            print(f"Ocurrió un error genérico: {e}")
+            return error_message, []
         
     async def recognize_image_async(self, e: ft.FilePickerResultEvent):
         """

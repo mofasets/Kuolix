@@ -13,6 +13,9 @@ El sistema que se usa para entregar informacion de la planta utiiza inteligencia
 DEFAULT_TEXT_SIZE: int = 16
 DEFAULT_TEXT_SEARCH: str = """Escribe el nombre de la enfermedad o la planta a buscar, y te conseguiré plantas medicinales que pueden ayudarte."""
 
+DEFAULT_RESPONSABILITY = """
+La siguiente información se proporciona únicamente con fines informativos y educativos, basada en conocimientos etnobotánicos y tradicionales. No constituye un consejo médico.
+"""
 
 #Information Note.
 INFO_TITLE_COLOR: str = '#663D8C'

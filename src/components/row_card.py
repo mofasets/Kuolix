@@ -20,7 +20,6 @@ def row_card(page: ft.Page, content: dict[str, str], back_route: str) -> ft.Cont
         page.go(f'/show/{content.get("id")}')
 
     image_url = f"{API_URL}/static/images/plants/{content.get('image_filename','no-image.jpg')}"
-    print(image_url)
 
     plant_image = ft.Image(
         src=image_url,
