@@ -48,7 +48,6 @@ def row_card(page: ft.Page, content: dict[str, str], back_route: str) -> ft.Cont
         spacing=20
     )
     
-    # --- FIN DE CAMBIOS ---
 
     row_card = ft.Container(
         content=control_content,
