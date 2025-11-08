@@ -8,6 +8,9 @@ def format_content(content: dict[str, str]):
     habitat_description = content.get("habitat_description", "No se encontró descripción.")
     specific_deseases = content.get("specific_diseases", [])
     usage_instructions = content.get("usage_instructions", [])
+    taxonomy = content.get("taxonomy", [])
+    active_ingredient = content.get("active_ingredient", [])
+    references = content.get("references", [])
 
     plant_content = ft.Column([
         ft.Text(
@@ -62,7 +65,46 @@ def format_content(content: dict[str, str]):
             size=12, 
             color="#494849",
             font_family='Verdana'
-        )
+        ),
+        ft.Text(
+            'Taxonomia:', 
+            size=12, 
+            color="#494849",
+            font_family='Verdana',
+            weight=ft.FontWeight.BOLD
+        ),
+        ft.Text(
+            taxonomy, 
+            size=12, 
+            color="#494849",
+            font_family='Verdana'
+        ),
+        ft.Text(
+            'Principio Activo:', 
+            size=12, 
+            color="#494849",
+            font_family='Verdana',
+            weight=ft.FontWeight.BOLD
+        ),
+        ft.Text(
+            active_ingredient, 
+            size=12, 
+            color="#494849",
+            font_family='Verdana'
+        ),
+        ft.Text(
+            'Referencias Bibliograficas:', 
+            size=12, 
+            color="#494849",
+            font_family='Verdana',
+            weight=ft.FontWeight.BOLD
+        ),
+        ft.Text(
+            '\n'.join(references), 
+            size=12, 
+            color="#494849",
+            font_family='Verdana'
+        ),
     ])
     
     content_control = ft.Column([

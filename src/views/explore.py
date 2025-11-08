@@ -58,7 +58,7 @@ class ExploreView(ft.View):
             content=ft.Icon(name=ft.Icons.UPLOAD_FILE, color=SECONDARY_COLOR),
             bgcolor=PRIMARY_COLOR,
             on_click=lambda _: self.file_picker.pick_files(
-                allow_multiple=False, # Es mejor ser explícito
+                allow_multiple=False,
                 file_type=ft.FilePickerFileType.IMAGE
             )
         )

@@ -8,8 +8,7 @@ DEFAULT_INFO_TEXT: str = """
 Agrega una foto de la planta que deseas identificar, y te indicaré si es medicinal o no, y sus propiedades. Tan solo debes darle “clic” al botón de abajo a la derecha.
 """
 DEFAULT_WARNING_TEXT: str = """
-El sistema que se usa para entregar informacion de la planta utiiza inteligencia artificial por detras, por lo que cierta informacion puede ser inexacta. Se aconseja consultar con un experto del area o fuentes externas.
-"""
+La información presentada es generada por un modelo de inteligencia artificial. Debido a la naturaleza de estos sistemas, los datos pueden contener imprecisiones. Esta aplicación es una herramienta de apoyo educativo; se recomienda enfáticamente validar la información con un especialista en salud o botánica antes de su uso."""
 DEFAULT_TEXT_SIZE: int = 16
 DEFAULT_TEXT_SEARCH: str = """Escribe el nombre de la enfermedad o la planta a buscar, y te conseguiré plantas medicinales que pueden ayudarte."""
 
