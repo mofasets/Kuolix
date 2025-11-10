@@ -17,6 +17,7 @@ def note_card(title: str, text: str, title_color: str, bg_color: str, icon: ft.I
         bgcolor=bg_color,
         padding=ft.padding.only(left=10, right=10, top=10, bottom=10),
         border_radius=15,
+        margin=ft.margin.only(left=10, right=10)
 
     )
     return info_badge

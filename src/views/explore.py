@@ -1,5 +1,5 @@
 import flet as ft 
-from sources.colors_pallete import PRIMARY_COLOR,SECONDARY_COLOR, DEFAULT_INFO_TEXT, INFO_TITLE_COLOR, INFO_BG_COLOR, WARNING_TITLE_COLOR, WARNING_BG_COLOR, DEFAULT_WARNING_TEXT, DEFAULT_RESPONSABILITY
+from sources.colors_pallete import PRIMARY_COLOR,SECONDARY_COLOR, BACKGROUND_COLOR, INFO_TITLE_COLOR, INFO_BG_COLOR, WARNING_TITLE_COLOR, WARNING_BG_COLOR, DEFAULT_WARNING_TEXT, DEFAULT_RESPONSABILITY
 from components.loading import get_loading_control 
 from components.row_card import row_card
 from components.nav_bar import nav_bar
@@ -24,17 +24,45 @@ class ExploreView(ft.View):
         self.scroll = ft.ScrollMode.AUTO
         self.app_state = app_state
         self.route = "/explore"
+        self.padding = ft.padding.all(0)
+
 
         # Controls
+        self.upload_photo_info_card = ft.Container(
+            content=ft.Column([
+                ft.ResponsiveRow([
+                    ft.Text(
+                        'Identifique su Planta', 
+                        size=24, 
+                        color=PRIMARY_COLOR, 
+                        weight=ft.FontWeight.BOLD, 
+                        text_align=ft.TextAlign.CENTER
+                    )
+                ],
+                    alignment=ft.MainAxisAlignment.CENTER 
+                ),
+                ft.ResponsiveRow([
+                    ft.Text('Presionando el boton de abajo a la derecha', text_align=ft.TextAlign.CENTER, size=16)
+                ],
+                    alignment=ft.MainAxisAlignment.CENTER
+                )],
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=0
+            ),
+            
+            bgcolor=INFO_BG_COLOR,
+            border_radius=ft.border_radius.all(12),
+            padding=ft.padding.all(20),
+            margin=ft.margin.only(left=10, right=10),
+            border=ft.border.all(
+                width=1, 
+                color=ft.Colors.GREY_300
+            )
+        )
+
         self.loaded_image = ft.Container(
             content=ft.Column([
-                note_card(
-                    'Información',
-                    DEFAULT_INFO_TEXT, 
-                    INFO_TITLE_COLOR, 
-                    INFO_BG_COLOR, 
-                    ft.Icons.INFO_OUTLINE
-                ),
+                self.upload_photo_info_card,
                 note_card(
                     'Precaución',
                     DEFAULT_WARNING_TEXT, 
@@ -75,13 +103,7 @@ class ExploreView(ft.View):
             )
         else:
             image_content = ft.Column([
-                note_card(
-                    'Información',
-                    DEFAULT_INFO_TEXT, 
-                    INFO_TITLE_COLOR, 
-                    INFO_BG_COLOR, 
-                    ft.Icons.INFO_OUTLINE
-                ),
+                self.upload_photo_info_card,
                 note_card(
                     'Precaución',
                     DEFAULT_WARNING_TEXT, 
@@ -102,13 +124,14 @@ class ExploreView(ft.View):
 
         # Description Control.
         description = ft.Container(margin=ft.margin.only(bottom=20))
+        
         if self.app_state.explore_img_description:
             description.content = format_content(self.app_state.explore_img_description)
 
-        similar_plants_title = ft.Container(margin=ft.margin.only(bottom=10))
+        similar_plants_title = ft.Container(margin=ft.margin.only(left=10, right=10, bottom=10))
         if self.app_state.explore_items:
             similar_plants_title.content = ft.Text('Plantas Similares', size=20, color=PRIMARY_COLOR, weight=ft.FontWeight.BOLD)
-
+        
         # Similar Plants Control
         results_container = ft.Column()
         if self.app_state.explore_items:
@@ -129,10 +152,22 @@ class ExploreView(ft.View):
             ft.Container(
                 content=img_response,
                 alignment=ft.alignment.center,
-                padding=ft.padding.all(10),
             ),
             nav_bar(self.page, 0)
         ]
+
+        if self.app_state.explore_img_description:
+            self.controls.insert(0, ft.Row([
+                ft.IconButton(icon=ft.Icons.LOGOUT, on_click=self.clear_content, icon_color=PRIMARY_COLOR)], 
+                alignment=ft.MainAxisAlignment.START,
+            ))
+
+    def clear_content(self, e):
+        self.app_state.explore_img_description = {}
+        self.app_state.explore_items = []
+        self.app_state.explore_last_image_b64= None
+        self.build_ui()
+        self.page.update()
 
     async def fetch_image_recognizer_async(self, image_path: str):
         """
@@ -161,7 +196,7 @@ class ExploreView(ft.View):
                     "/explore/recognize_img",
                     files=files_to_upload,
                     headers=headers,
-                    timeout=120.0
+                    timeout=10.0
                 )
                 print('Respuesta: ', response)
                 response.raise_for_status()
@@ -211,7 +246,7 @@ class ExploreView(ft.View):
             error_message = results[0]
             self.page.open(ft.SnackBar(content=ft.Text(error_message, color="white"), bgcolor=ft.Colors.RED_400))
         else:
-            self.app_state.explore_img_description, self.app_state.explore_items = results       
+            self.app_state.explore_img_description, self.app_state.explore_items = results   
      
         self.build_ui()
         self.page.update()

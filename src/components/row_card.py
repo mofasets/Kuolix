@@ -1,5 +1,6 @@
 import flet as ft
 from sources.colors_pallete import BACKGROUND_COLOR, PRIMARY_COLOR, SECONDARY_COLOR
+from components.badge import badge
 from views.show import ShowView
 from state import app_state
 import os
@@ -15,7 +16,7 @@ def row_card(page: ft.Page, content: dict[str, str], back_route: str) -> ft.Cont
         page.session.set("scientific_name", content.get("scientific_name"))
         page.session.set("common_names", content.get("common_names"))
         page.session.set("habitat_description", content.get("habitat_description"))
-        page.session.set("specific_deseases", content.get("specific_deseases"))
+        page.session.set("specific_diseases", content.get("specific_diseases"))
         page.session.set("back_route", back_route)
         page.go(f'/show/{content.get("id")}')
 
@@ -23,42 +24,43 @@ def row_card(page: ft.Page, content: dict[str, str], back_route: str) -> ft.Cont
 
     plant_image = ft.Image(
         src=image_url,
-        width=50,
-        height=50,
         fit=ft.ImageFit.COVER, 
-        border_radius=ft.border_radius.all(5),
-        
+        border_radius=ft.border_radius.all(15),
         error_content=ft.Image(
             src='img/logo.png',
-            width=50,
-            height=50,
             fit=ft.ImageFit.COVER,
-            border_radius=ft.border_radius.all(5),
+            border_radius=ft.border_radius.all(15),
         )
     )
 
+    #Badges with the specific deseases.
+    specific_deseases_badges = ft.Container()
+    if content.get('specific_diseases'):
+        specific_deseases_badges.content = ft.Row([badge(desease) for desease in content.get('specific_diseases')], wrap=True)
+
     control_content = ft.Row([
-        plant_image, # Reemplazamos el ft.Image anterior por nuestra nueva variable
         ft.Column([
-            ft.Text(content.get('scientific_name'), color=PRIMARY_COLOR, size=20, weight=ft.FontWeight.BOLD),
-            ft.Text(f'{content.get("habitat_description", "")[:30]}...')
+            ft.Container(content=plant_image, alignment=ft.alignment.center),
+            ft.Text(content.get('scientific_name'), color=PRIMARY_COLOR, size=24, weight=ft.FontWeight.BOLD),
+            specific_deseases_badges,
+            ft.Text(f'{content.get("habitat_description", "")[:100]}...', size=16)
         ], 
             expand=True,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER
         )],
-        spacing=20
+        spacing=20,
     )
-    
 
     row_card = ft.Container(
         content=control_content,
-        padding=ft.padding.all(20),
+        padding=ft.padding.only(left=10, right=10, top=10, bottom=30),
         border_radius=15,
         margin=ft.margin.only(bottom=10),
         shadow=ft.BoxShadow(
-            spread_radius=1,
-            blur_radius=1,
-            color=SECONDARY_COLOR,
-            offset=ft.Offset(0, 0),
+            spread_radius=2,
+            blur_radius=3,
+            color="#CCCCCC",
+            offset=ft.Offset(0, 1),
             blur_style=ft.ShadowBlurStyle.OUTER,
         ),
         on_click=on_click,

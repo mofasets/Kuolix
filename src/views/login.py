@@ -87,17 +87,8 @@ class LoginView(ft.View):
             content=content_column,
             padding=ft.padding.all(20),
             alignment=ft.alignment.center,
-            border_radius=15,
             width=400,
-            shadow=ft.BoxShadow(
-                spread_radius=1,
-                blur_radius=1,
-                color=ft.Colors.BLUE_GREY_300,
-                offset=ft.Offset(0, 0),
-                blur_style=ft.ShadowBlurStyle.OUTER,
-            ),
             margin=ft.margin.only(top=50),
-            
         )
         self.controls = [login_section]
 

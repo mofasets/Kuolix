@@ -16,6 +16,8 @@ DEFAULT_RESPONSABILITY = """
 La siguiente información se proporciona únicamente con fines informativos y educativos, basada en conocimientos etnobotánicos y tradicionales. No constituye un consejo médico.
 """
 
+DEFAULT_DANGER = """ El modelo de IA ha identificado esta planta como tóxica. Busca asesoramiento con un especialista, y evita que haga contacto con niños y/o mascotas."""
+
 #Information Note.
 INFO_TITLE_COLOR: str = '#663D8C'
 INFO_BG_COLOR : str = '#F3E2F4'
@@ -23,3 +25,7 @@ INFO_BG_COLOR : str = '#F3E2F4'
 #Warning Note.
 WARNING_TITLE_COLOR: str = "#9B9124"
 WARNING_BG_COLOR : str = '#F7F2B5'
+
+# Danger Note.
+DANGER_TITLE_COLOR: str = "#9B2424"
+DARGER_BG_COLOR: str = "#F7CAB5"

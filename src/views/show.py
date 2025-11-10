@@ -28,6 +28,7 @@ class ShowView(ft.View):
         # --- Propiedades de la vista ---
         self.route = f"/show/{self.item_id}"
         self.scroll = ft.ScrollMode.AUTO
+        self.padding = ft.padding.all(0)
 
         self.loading_control = get_loading_control(self.page, "Cargando detalles...")
         self.controls = [self.loading_control]

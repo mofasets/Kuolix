@@ -7,7 +7,6 @@ from sources.select_option import GENDER
 import datetime
 from state import AppState
 import httpx
-import asyncio
 
 class SignupView(ft.View):
     """
@@ -21,7 +20,7 @@ class SignupView(ft.View):
         self.route = "/signup"
         self.scroll = ft.ScrollMode.AUTO
         self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-        self.padding = ft.padding.all(10)
+        self.padding = ft.padding.all(0)
 
         # --- Controles de la vista ---
         self.setup_controls()
@@ -63,11 +62,6 @@ class SignupView(ft.View):
             color=PRIMARY_TEXT_COLOR,
             on_click=self.signup_user
         )
-        signup_button = ft.Container(
-            content=self.signup_button_control,
-            margin=ft.margin.only(top=20),
-            border_radius=15,
-        )
         
         # Control para mostrar mensajes de error/éxito
         self.info_text = ft.Text(value="", visible=False)
@@ -102,7 +96,6 @@ class SignupView(ft.View):
                     on_click=self.signup_user
                 ),
                 margin=ft.margin.only(top=20),
-                border_radius=15,
             ),
         ],
             alignment=ft.MainAxisAlignment.CENTER,
@@ -114,12 +107,7 @@ class SignupView(ft.View):
             content=content_column,
             padding=ft.padding.all(20),
             alignment=ft.alignment.center,
-            border_radius=15,
             width=400,
-            shadow=ft.BoxShadow(
-                spread_radius=1, blur_radius=1, color=ft.Colors.BLUE_GREY_300,
-                offset=ft.Offset(0, 0), blur_style=ft.ShadowBlurStyle.OUTER,
-            ),
             margin=ft.margin.only(top=10, bottom=20),
         )
 
@@ -167,8 +155,6 @@ class SignupView(ft.View):
             self.info_text.color = ft.Colors.GREEN
             self.info_text.visible = True
             self.page.update()
-
-            asyncio.sleep(2)
 
             self.page.go('/login')
 

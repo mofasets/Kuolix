@@ -23,7 +23,7 @@ class SettingsView(ft.View):
         self.page = page
         self.app_state = app_state
         self.scroll = ft.ScrollMode.AUTO
-        self.padding = ft.padding.only(left=20, right=20, top=20)
+        self.padding = ft.padding.all(0)
         # --- Controles de la vista ---
         self.setup_controls()
 
@@ -77,7 +77,7 @@ class SettingsView(ft.View):
 
         self.controls.clear()
         self.controls.extend([
-            ft.Container(content=content, padding=ft.padding.only(top=20)),
+            ft.Container(content=content, padding=ft.padding.only(top=20, left=10, right=10, bottom=20)),
             nav_bar(self.page, 2),
         ])
 
