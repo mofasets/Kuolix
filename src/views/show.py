@@ -69,6 +69,7 @@ class ShowView(ft.View):
             "habitat_description": response.get('habitat_description','Sin Información'),
             "specific_deseases": response.get('specific_deseases',[]),
             "usage_instructions": response.get('usage_instructions','Sin Información'),
+            "taxonomy": response.get('taxonomy',[]),
             "image": f"{API_URL}/static/images/plants/{response.get('image_filename','no-image.jpg')}",
         }
 

@@ -15,5 +15,7 @@ class AppState:
         
         self.search_query = ""
         self.search_results = []
+        
+        self.users_list = []
 
 app_state = AppState()

@@ -6,6 +6,11 @@ from views.explore import ExploreView
 from views.search import SearchView
 from views.settings import SettingsView
 from views.show import ShowView
+from views.create import CreateView
+from views.edit import EditView
+from views.user.index import UserIndexView
+from views.user.create import UserCreateView
+from views.user.edit import UserEditView
 from state import app_state
 import httpx
 from dotenv import load_dotenv
@@ -35,12 +40,28 @@ def main(page: ft.Page):
             page.views.append(ExploreView(page, app_state))
         if troute.match("/search"):
             page.views.append(SearchView(page, app_state))
-        if troute.match("/settings"):
-            page.views.append(SettingsView(page, app_state))
+
+        if troute.match("/user/index"):
+            page.views.append(UserIndexView(page, app_state))
+
+        if troute.match("/user/create"):
+            page.views.append(UserCreateView(page, app_state))
+
+        if troute.match("/user/edit/:id"):
+            item_id = troute.id
+            page.views.append(UserEditView(page, user_id=item_id, app_state=app_state))
+
             
         if troute.match("/show/:id"):
             item_id = troute.id
             page.views.append(ShowView(page, item_id=item_id, app_state=app_state))
+
+        if troute.match("/create"):
+            page.views.append(CreateView(page, app_state=app_state))
+
+        if troute.match("/edit/:id"):
+            item_id = troute.id
+            page.views.append(EditView(page, item_id=item_id, app_state=app_state))
 
         if troute.match("/signup"):
             page.views.append(SignupView(page, app_state))

@@ -11,6 +11,7 @@ API_URL = os.getenv("API_BASE_URL")
 
 
 def row_card(page: ft.Page, content: dict[str, str], back_route: str) -> ft.Container:
+
     def on_click(e):
         page.session.set("id", content.get("id"))
         page.session.set("scientific_name", content.get("scientific_name"))
@@ -33,6 +34,14 @@ def row_card(page: ft.Page, content: dict[str, str], back_route: str) -> ft.Cont
         )
     )
 
+    # edit Button
+    edit_plant_button = ft.IconButton(
+        icon=ft.Icons.EDIT_NOTE, 
+        icon_color=PRIMARY_COLOR, 
+        bgcolor=BACKGROUND_COLOR,
+        on_click=lambda _:page.go(f'/edit/{content.get("id")}')
+    )
+
     #Badges with the specific deseases.
     specific_deseases_badges = ft.Container()
     if content.get('specific_diseases'):
@@ -40,6 +49,7 @@ def row_card(page: ft.Page, content: dict[str, str], back_route: str) -> ft.Cont
 
     control_content = ft.Row([
         ft.Column([
+            ft.Row([edit_plant_button], alignment=ft.MainAxisAlignment.END),
             ft.Container(content=plant_image, alignment=ft.alignment.center),
             ft.Text(content.get('scientific_name'), color=PRIMARY_COLOR, size=24, weight=ft.FontWeight.BOLD),
             specific_deseases_badges,

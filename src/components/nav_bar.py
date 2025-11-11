@@ -14,7 +14,7 @@ def nav_bar(page, selected_index=0):
         on_change=lambda e: page.go(
             "/explore" if e.control.selected_index == 0 else
             "/search" if e.control.selected_index == 1 else
-            "/settings"
+            "/user/index"
         )
         
     )

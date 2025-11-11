@@ -1,9 +1,14 @@
 import flet as ft
 import httpx
-from sources.colors_pallete import PRIMARY_COLOR, SECONDARY_COLOR, DEFAULT_TEXT_SEARCH, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR
+from sources.colors_pallete import (
+    PRIMARY_COLOR, 
+    SECONDARY_COLOR, 
+    DEFAULT_TEXT_SEARCH, 
+    DEFAULT_TEXT_SIZE, 
+    DEFAULT_TEXT_COLOR
+)
 from components.loading import get_loading_control
 from components.row_card import row_card
-from views.show import ShowView
 from components.logo import logo
 from components.nav_bar import nav_bar
 from state import AppState
@@ -60,6 +65,13 @@ class SearchView(ft.View):
                 ft.Segment(value="non_verified", label=ft.Text("Sin verificar")),
             ]
         )
+
+        # Floating Action Button.
+        self.floating_action_button = ft.FloatingActionButton(
+            content=ft.Icon(name=ft.Icons.EDIT_NOTE, color=SECONDARY_COLOR),
+            bgcolor=PRIMARY_COLOR,
+            on_click=lambda _:self.page.go('/create')
+        )
         
         self.results_container = ft.Column(scroll=ft.ScrollMode.AUTO, expand=True)
         if self.app_state.search_results:
@@ -99,6 +111,10 @@ class SearchView(ft.View):
             self.search_input.value = ""
             self.app_state.search_query = ""
             await self.search_all()
+        elif "non_verified" in mode:
+            self.search_input.value = ""
+            self.app_state.search_query = ""
+            await self.search_all_non_verified()
 
     async def fetch_search_results_async(self, query: str) -> list[dict]:
         """
@@ -245,6 +261,49 @@ class SearchView(ft.View):
         
             response = await self.app_state.api_client.get(
                 f"/search/all", 
+                headers=headers
+            )
+        
+            response.raise_for_status()
+
+            results_data = response.json()
+            return results_data
+
+        except httpx.HTTPStatusError as exc:
+            print(f"Error de API: {exc.response.status_code} - {exc.response.text}")
+        except Exception as e:
+            print(f"Ocurrió un error inesperado durante la búsqueda: {e}")
+        return []
+
+    async def search_all_non_verified(self) -> List[dict]:
+        self.results_container.controls.clear()
+        self.results_container.controls.append(get_loading_control(self.page, "Buscando..."))
+        self.page.update()
+
+        results = await self.fetch_all_non_verified()
+        self.app_state.search_results = results
+        
+        self.results_container.controls.clear()
+        if self.app_state.search_results:
+            for res in self.app_state.search_results:
+                self.results_container.controls.append(
+                    row_card(self.page, res, back_route="/search")
+                )
+        self.page.update()
+
+    async def fetch_all_non_verified(self) -> List[dict]:
+        """Get the full lists of plants"""
+
+        token = self.app_state.token
+        if not token:
+            self.page.go("/login")
+            return []
+
+        headers = {"Authorization": f"Bearer {token}"}        
+        try:
+        
+            response = await self.app_state.api_client.get(
+                f"/search/all_non_verified", 
                 headers=headers
             )
         
