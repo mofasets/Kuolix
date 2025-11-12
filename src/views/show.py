@@ -24,8 +24,6 @@ class ShowView(ft.View):
         self.page = page
         self.item_id = item_id
         self.app_state = app_state
-
-        # --- Propiedades de la vista ---
         self.route = f"/show/{self.item_id}"
         self.scroll = ft.ScrollMode.AUTO
         self.padding = ft.padding.all(0)

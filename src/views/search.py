@@ -3,7 +3,6 @@ import httpx
 from sources.colors_pallete import (
     PRIMARY_COLOR, 
     SECONDARY_COLOR, 
-    DEFAULT_TEXT_SEARCH, 
     DEFAULT_TEXT_SIZE, 
     DEFAULT_TEXT_COLOR
 )
@@ -74,19 +73,7 @@ class SearchView(ft.View):
         )
         
         self.results_container = ft.Column(scroll=ft.ScrollMode.AUTO, expand=True)
-        if self.app_state.search_results:
-            for res in self.app_state.search_results:
-                self.results_container.controls.append(
-                    row_card(self.page, res, back_route="/search")
-                )
-        else:
-            self.results_container.controls.append(
-                ft.Container(
-                    content=ft.Text(DEFAULT_TEXT_SEARCH, size=DEFAULT_TEXT_SIZE, color=DEFAULT_TEXT_COLOR, text_align=ft.TextAlign.CENTER),
-                    margin=ft.margin.only(top=50), alignment=ft.alignment.center
-                )
-            )
-
+        self._build_results_list(self.app_state.search_results)
         self.controls.clear()
         self.controls = [
             ft.Container(content=ft.Column([
@@ -103,6 +90,7 @@ class SearchView(ft.View):
     async def on_filter_change(self, e: ft.ControlEvent):
         """Se activa al cambiar entre 'Recomendaciones' y 'All'."""
         mode = e.data
+        self.current_filter_mode = mode
         if "recommendations" in mode:
             self.search_input.value = ""
             self.app_state.search_query = ""
@@ -170,28 +158,23 @@ class SearchView(ft.View):
         self.app_state.search_results = results
         
         self.results_container.controls.clear()
-        if self.app_state.search_results:
-            for res in self.app_state.search_results:
-                self.results_container.controls.append(
-                    row_card(self.page, res, back_route="/search")
-                )
+        self._build_results_list(results)
         self.page.update()
 
     def search_action(self, e):
         """
         Activador síncrono: guarda el término de búsqueda y lanza la tarea asíncrona.
         """
-        # if self.filter_toggle:
-        #     self.filter_toggle.selected = {"all"}
+        self.current_filter_mode = "all"
+        if self.filter_toggle:
+            self.filter_toggle.selected = {"all"}
 
         term = self.search_input.value.strip()
         if not term:
             return
         
-        # Guardamos el término de búsqueda en el estado central.
         self.app_state.search_query = term
         
-        # Lanzamos la tarea de búsqueda real en segundo plano.
         self.page.run_task(self.search_async)
     
     async def search_async(self):
@@ -206,18 +189,7 @@ class SearchView(ft.View):
         self.app_state.search_results = results
         
         self.results_container.controls.clear()
-        if self.app_state.search_results:
-            for res in self.app_state.search_results:
-                self.results_container.controls.append(
-                    row_card(self.page, res, back_route="/search")
-                )
-        else:
-             self.results_container.controls.append(
-                ft.Container(
-                    content=ft.Text("No se encontraron resultados.", size=DEFAULT_TEXT_SIZE, color=DEFAULT_TEXT_COLOR, text_align=ft.TextAlign.CENTER),
-                    margin=ft.margin.only(top=50), alignment=ft.alignment.center
-                )
-            )
+        self._build_results_list(results)
         self.page.update()
 
     async def fetch_recommendations(self) -> List[dict]:
@@ -284,11 +256,7 @@ class SearchView(ft.View):
         self.app_state.search_results = results
         
         self.results_container.controls.clear()
-        if self.app_state.search_results:
-            for res in self.app_state.search_results:
-                self.results_container.controls.append(
-                    row_card(self.page, res, back_route="/search")
-                )
+        self._build_results_list(results)
         self.page.update()
 
     async def fetch_all_non_verified(self) -> List[dict]:
@@ -317,3 +285,51 @@ class SearchView(ft.View):
         except Exception as e:
             print(f"Ocurrió un error inesperado durante la búsqueda: {e}")
         return []
+
+    def _build_results_list(self, results: List[dict]):
+        """
+        Limpia y repuebla el contenedor de resultados, pasando el 
+        callback de recarga a cada tarjeta.
+        """
+        self.results_container.controls.clear()
+        
+        if results:
+            for res in results:
+                self.results_container.controls.append(
+                    row_card(
+                        self.page, 
+                        res, 
+                        back_route="/search",
+                        on_delete_callback=self.reload_data 
+                    )
+                )
+        else:
+            self.results_container.controls.append(
+                ft.Container(
+                    content=ft.Text("No se encontraron resultados.", size=DEFAULT_TEXT_SIZE, color=DEFAULT_TEXT_COLOR, text_align=ft.TextAlign.CENTER),
+                    margin=ft.margin.only(top=50), alignment=ft.alignment.center
+                )
+            )
+
+    async def reload_data(self):
+        """
+        Recarga los datos de la API basándose en el filtro activo actual
+        y actualiza la UI. Esta es la función de CALLBACK.
+        """
+        self.results_container.controls.clear()
+        self.results_container.controls.append(get_loading_control(self.page, "Actualizando..."))
+        self.page.update()
+
+        results = []
+        if self.current_filter_mode == "recommendations":
+            results = await self.fetch_recommendations()
+        elif self.current_filter_mode == "all":
+            results = await self.fetch_all()
+        elif self.current_filter_mode == "non_verified":
+            results = await self.fetch_all_non_verified()
+        else: 
+            results = await self.fetch_search_results_async(self.app_state.search_query)
+
+        self.app_state.search_results = results
+        self._build_results_list(results)
+        self.page.update()    
