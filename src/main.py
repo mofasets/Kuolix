@@ -44,6 +44,15 @@ def main(page: ft.Page):
         if troute.match("/user/index"):
             page.views.append(UserIndexView(page, app_state))
 
+            #Get Role
+            user_role = app_state.current_user.get("role", "aficionado")
+            user_id = app_state.current_user.get("id")
+
+            if user_role == "admin":
+                page.views.append(UserIndexView(page, app_state))
+            else:
+                page.views.append(UserEditView(page, user_id=user_id, app_state=app_state))
+
         if troute.match("/user/create"):
             page.views.append(UserCreateView(page, app_state))
 

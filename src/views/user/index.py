@@ -87,6 +87,10 @@ class UserIndexView(ft.View):
         self.controls.clear()
         self.controls = [
             ft.Container(content=ft.Column([
+                ft.Row([
+                    ft.IconButton(icon=ft.Icons.LOGOUT, on_click=self.logout, icon_color=PRIMARY_COLOR)], 
+                    alignment=ft.MainAxisAlignment.END,
+                ),
                 logo,
                 self.results_container
             ]),
@@ -231,3 +235,16 @@ class UserIndexView(ft.View):
             print(f'Error encontrado: {ex}')
         await self.close_dialog()
         self.page.update()        
+
+    def logout(self, e):
+        """Limpia el estado de la sesión y redirige al login."""
+        self.app_state.token = None
+        self.user_id = None
+        self.app_state.user_profile = None
+        self.app_state.explore_items = []
+        self.app_state.explore_last_image_b64 = None
+        self.app_state.explore_img_description = {}
+        self.app_state.search_query = ""
+        self.app_state.search_results = []
+        print("Sesión cerrada.")
+        self.page.go("/login")

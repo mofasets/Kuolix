@@ -30,7 +30,11 @@ class SearchView(ft.View):
         self.filter_toggle = None
         self.current_filter_mode = "recommendations"
         self.page.controls = [ft.Container(content=get_loading_control(self.page, "Cargando..."), expand=True)]
-        
+
+        if self.app_state.search_query:
+            self.current_filter_mode = "all"
+        else:
+            self.current_filter_mode = "recommendations"
         if not self.app_state.search_results:
             self.page.run_task(self.load_initial_recommendations)
         else:
@@ -40,6 +44,12 @@ class SearchView(ft.View):
         """
         Construye la interfaz de usuario completa basándose en el estado actual.
         """
+        # assign  a default role.
+        user_role = "aficionado"
+        if self.app_state.current_user:
+            user_role = self.app_state.current_user.get("role", "aficionado")
+
+        
         self.search_input = ft.TextField(
             label="Buscar", value=self.app_state.search_query, 
             border_radius=15, border_color=PRIMARY_COLOR,
@@ -51,6 +61,21 @@ class SearchView(ft.View):
             icon_color=PRIMARY_COLOR, on_click=self.search_action
         )
 
+        segment_list = [
+            ft.Segment(value="all", label=ft.Text("Todo")),
+            ft.Segment(value="recommendations", label=ft.Text("Para Ti")),
+        ]
+
+        if user_role == "admin":
+            segment_list.append(
+                ft.Segment(value="non_verified", label=ft.Text("Sin verificar"))
+            )
+
+        # Manejar el estado de selección (si el usuario no es admin
+        # pero el modo 'non_verified' estaba activo, regresarlo)
+        if self.current_filter_mode == "non_verified" and user_role != "admin":
+            self.current_filter_mode = "recommendations"
+
         self.filter_toggle = ft.SegmentedButton(
 
             # Por defecto, seleccionamos "recommendations"
@@ -58,19 +83,18 @@ class SearchView(ft.View):
             on_change=self.on_filter_change,
             expand=True,
             style=ft.ButtonStyle(color=PRIMARY_COLOR, icon_color=PRIMARY_COLOR, bgcolor={ft.ControlState.SELECTED: SECONDARY_COLOR}),
-            segments=[
-                ft.Segment(value="all", label=ft.Text("Todo")),
-                ft.Segment(value="recommendations", label=ft.Text("Para Ti")),
-                ft.Segment(value="non_verified", label=ft.Text("Sin verificar")),
-            ]
+            segments=segment_list
         )
 
         # Floating Action Button.
-        self.floating_action_button = ft.FloatingActionButton(
-            content=ft.Icon(name=ft.Icons.EDIT_NOTE, color=SECONDARY_COLOR),
-            bgcolor=PRIMARY_COLOR,
-            on_click=lambda _:self.page.go('/create')
-        )
+        self.floating_action_button = None
+
+        if user_role == "admin":
+            self.floating_action_button = ft.FloatingActionButton(
+                content=ft.Icon(name=ft.Icons.EDIT_NOTE, color=SECONDARY_COLOR),
+                bgcolor=PRIMARY_COLOR,
+                on_click=lambda _:self.page.go('/create')
+            )
         
         self.results_container = ft.Column(scroll=ft.ScrollMode.AUTO, expand=True)
         self._build_results_list(self.app_state.search_results)
@@ -171,6 +195,7 @@ class SearchView(ft.View):
 
         term = self.search_input.value.strip()
         if not term:
+            self.page.run_task(self.search_all)
             return
         
         self.app_state.search_query = term
@@ -316,20 +341,53 @@ class SearchView(ft.View):
         Recarga los datos de la API basándose en el filtro activo actual
         y actualiza la UI. Esta es la función de CALLBACK.
         """
+    async def reload_data(self):
+        """
+        Recarga los datos de la API basándose en el estado activo
+        (primero la búsqueda, luego el filtro) y actualiza la UI.
+        """
         self.results_container.controls.clear()
         self.results_container.controls.append(get_loading_control(self.page, "Actualizando..."))
         self.page.update()
 
         results = []
-        if self.current_filter_mode == "recommendations":
-            results = await self.fetch_recommendations()
-        elif self.current_filter_mode == "all":
+        
+        query = self.app_state.search_query
+        mode = self.current_filter_mode
+        
+        print(f"Recargando... Query: '{query}', Modo de Filtro: {mode}")
+
+        if query:
+            print("Recargando la búsqueda de texto.")
+            results = await self.fetch_search_results_async(query)
+        
+        else:
+            print(f"Recargando el modo de filtro: {mode}")
+            if mode == "recommendations":
+                results = await self.fetch_recommendations()
+            elif mode == "all":
+                results = await self.fetch_all()
+            elif mode == "non_verified":
+                results = await self.fetch_all_non_verified()
+            else:
+                print("Modo inconsistente, cargando 'Recomendaciones'.")
+                results = await self.fetch_recommendations()
+                self.current_filter_mode = "recommendations" # Corregir estado
+                if self.filter_toggle:
+                    self.filter_toggle.selected = {"recommendations"}
+
+        if not results:
+            print(f"La recarga (modo '{mode}') no arrojó resultados. Cargando 'Todo' por defecto.")
+            
+            self.current_filter_mode = "all"
+            self.app_state.search_query = ""
+            self.search_input.value = ""
+            if self.filter_toggle:
+                self.filter_toggle.selected = {"all"}
+
             results = await self.fetch_all()
-        elif self.current_filter_mode == "non_verified":
-            results = await self.fetch_all_non_verified()
-        else: 
-            results = await self.fetch_search_results_async(self.app_state.search_query)
+        
 
         self.app_state.search_results = results
         self._build_results_list(results)
-        self.page.update()    
+        self.page.update()

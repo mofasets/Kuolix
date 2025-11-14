@@ -20,7 +20,7 @@ def row_card(page: ft.Page, content: dict[str, str], back_route: str, on_delete_
             confirm_dialog.open = False
             page.update()
 
-    async def delete_record_confirmed(item_id: str):
+    async def delete_record_confirmed(itemid: str):
         """Llama a la API para borrar y luego llama al callback."""
         
         token = app_state.token
@@ -33,7 +33,7 @@ def row_card(page: ft.Page, content: dict[str, str], back_route: str, on_delete_
         
         try:
             response = await app_state.api_client.delete(
-                f"/plant/delete/{item_id}", 
+                f"/plant/delete/{itemid}", 
                 headers=headers
             )
             response.raise_for_status() 
@@ -57,7 +57,7 @@ def row_card(page: ft.Page, content: dict[str, str], back_route: str, on_delete_
         close_dialog_sync()
         page.update()
 
-    def open_delete_dialog(item_id: str, item_name: str):
+    def open_delete_dialog(itemid: str, item_name: str):
         """Construye y muestra el modal de confirmación."""
         nonlocal confirm_dialog
         
@@ -75,7 +75,7 @@ def row_card(page: ft.Page, content: dict[str, str], back_route: str, on_delete_
                     style=ft.ButtonStyle(color=ft.Colors.RED_500),
                     on_click=lambda e: page.run_task(
                         delete_record_confirmed, 
-                        item_id
+                        itemid
                     )
                 ),
             ],
@@ -87,13 +87,13 @@ def row_card(page: ft.Page, content: dict[str, str], back_route: str, on_delete_
         page.update()
 
     def on_click(e):
-        page.session.set("id", content.get("_id"))
+        page.session.set("id", content.get("id"))
         page.session.set("scientific_name", content.get("scientific_name"))
         page.session.set("common_names", content.get("common_names"))
         page.session.set("habitat_description", content.get("habitat_description"))
         page.session.set("specific_diseases", content.get("specific_diseases"))
         page.session.set("back_route", back_route)
-        page.go(f'/show/{content.get("_id")}')
+        page.go(f'/show/{content.get("id")}')
 
     image_url = f"{API_URL}/static/images/plants/{content.get('image_filename','no-image.jpg')}"
 
@@ -107,22 +107,31 @@ def row_card(page: ft.Page, content: dict[str, str], back_route: str, on_delete_
             border_radius=ft.border_radius.all(15),
         )
     )
+    #Role.
+    user_role = "aficionado"
+    if app_state.current_user:
+        user_role = app_state.current_user.get("role", "aficionado")
 
     # Buttons
     edit_plant_button = ft.IconButton(
         icon=ft.Icons.EDIT_NOTE, 
         icon_color=PRIMARY_COLOR, 
         bgcolor=BACKGROUND_COLOR,
-        on_click=lambda _:page.go(f'/edit/{content.get("_id")}')
+        on_click=lambda _:page.go(f'/edit/{content.get("id")}')
     )
 
     delete_plant_button = ft.IconButton(
         icon=ft.Icons.DELETE, 
         icon_color=DANGER_TITLE_COLOR, 
         bgcolor=DARGER_BG_COLOR,
-        on_click=lambda e, item_id=content.get('_id'), item_name=content.get('scientific_name'): open_delete_dialog(item_id, item_name)
+        on_click=lambda e, itemid=content.get('id'), item_name=content.get('scientific_name'): open_delete_dialog(itemid, item_name)
     )
 
+    admin_buttons_row = ft.Row(
+        [edit_plant_button, delete_plant_button],
+        alignment=ft.MainAxisAlignment.END,
+        visible=(user_role == "admin")
+    )
 
     #Badges with the specific deseases.
     specific_deseases_badges = ft.Container()
@@ -131,7 +140,7 @@ def row_card(page: ft.Page, content: dict[str, str], back_route: str, on_delete_
 
     control_content = ft.Row([
         ft.Column([
-            ft.Row([edit_plant_button, delete_plant_button], alignment=ft.MainAxisAlignment.END),
+            admin_buttons_row,
             ft.Container(content=plant_image, alignment=ft.alignment.center),
             ft.Text(content.get('scientific_name'), color=PRIMARY_COLOR, size=24, weight=ft.FontWeight.BOLD),
             specific_deseases_badges,

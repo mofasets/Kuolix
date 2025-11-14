@@ -39,7 +39,7 @@ class UserEditView(ft.View):
         self.phone_input = input_field('Teléfono', '', ft.KeyboardType.PHONE)
         self.country_input = input_field('País', '')
         self.gender_input = selection_field('Género', GENDER)
-        self.birthdate_input = input_field('Fecha de Nacimiento', '')
+        self.birthdate_input = input_field('Fecha de Nacimiento', '', readonly=True)
 
     def build_ui(self, data: dict):
         """Construye la interfaz de usuario completa con los datos del perfil."""
@@ -53,7 +53,7 @@ class UserEditView(ft.View):
             ], alignment=ft.MainAxisAlignment.CENTER),
             ft.Row([
                 self.update_button,
-                ft.FilledButton(text='Cerrar', on_click=lambda _:self.page.go('/user/index'), bgcolor=SECONDARY_COLOR, color=PRIMARY_COLOR)
+                ft.FilledButton(text='Cerrar', on_click=self.handle_close_or_discard, bgcolor=SECONDARY_COLOR, color=PRIMARY_COLOR)
             ], alignment=ft.MainAxisAlignment.CENTER, spacing=20)
         ], scroll=ft.ScrollMode.AUTO, expand=True) 
 
@@ -151,6 +151,28 @@ class UserEditView(ft.View):
         else:
             self.birthdate_input.value = ""
         self.page.update()
+
+    def handle_close_or_discard(self, e: ft.ControlEvent):
+        """
+        Maneja el clic en el botón 'Cerrar'.
+        - Si es Admin, vuelve al índice de usuarios.
+        - Si es Aficionado, descarta los cambios recargando los datos.
+        """
+        
+        user_role = "aficionado" 
+        if self.app_state.current_user:
+            user_role = self.app_state.current_user.get("role", "aficionado")
+
+        if user_role == "admin":
+            self.page.go('/user/index')
+        else:
+            print("Aficionado descartando cambios. Recargando datos...")
+            
+            self.controls.clear()
+            self.controls.append(get_loading_control(self.page, "Cargando Perfil..."))
+            self.page.update()
+            
+            self.page.run_task(self.load_profile_data)
 
     def logout(self, e):
         """Limpia el estado de la sesión y redirige al login."""
